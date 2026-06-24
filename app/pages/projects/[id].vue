@@ -60,17 +60,12 @@ const summary = computed(() => {
           </div>
         </section>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button class="btn-primary" @click="adding = 'payment'">+ Payment</button>
-          <button class="btn-ghost" @click="adding = 'expense'">+ Expense</button>
-        </div>
-
         <!-- Tabs -->
         <div class="flex rounded-xl bg-gray-100 p-1 text-sm font-medium">
           <button
             v-for="t in (['overview', 'payments', 'expenses'] as const)"
             :key="t"
-            class="flex-1 rounded-lg py-1.5 capitalize transition"
+            class="flex-1 rounded-lg py-2.5 capitalize transition"
             :class="tab === t ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'"
             @click="tab = t"
           >{{ t }}</button>
@@ -107,6 +102,18 @@ const summary = computed(() => {
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No expenses recorded.</p>
         </SectionCard>
+
+        <!-- spacer so the sticky action bar never hides the last row -->
+        <div class="h-16" />
+
+        <!-- Sticky, thumb-reachable scoped actions for this project.
+             Right padding keeps clear of the global Quick-Add FAB. -->
+        <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4">
+          <div class="mx-auto flex max-w-md gap-2 pr-[4.25rem]">
+            <button class="btn-primary flex-1 shadow-lg shadow-brand-600/20" @click="adding = 'payment'">+ Payment</button>
+            <button class="btn-ghost flex-1 !bg-white shadow-lg ring-1 ring-gray-200" @click="adding = 'expense'">+ Expense</button>
+          </div>
+        </div>
 
         <AppModal v-if="adding === 'payment'" title="Record Payment" @close="adding = null">
           <PaymentForm :default-project-id="id" @saved="onSaved" @cancel="adding = null" />

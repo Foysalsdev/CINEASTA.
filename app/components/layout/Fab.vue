@@ -4,8 +4,7 @@ const ui = useUiStore()
 
 <template>
   <button
-    class="fixed bottom-16 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition active:scale-95"
-    style="margin-bottom: env(safe-area-inset-bottom)"
+    class="bottom-nav-offset fixed right-4 z-40 mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition active:scale-95"
     aria-label="Quick add"
     @click="ui.openQuickAdd('menu')"
   >

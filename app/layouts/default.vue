@@ -15,7 +15,7 @@ const { isMock } = useRepositories()
     </header>
 
     <!-- Routed page content. Bottom padding clears the nav + FAB. -->
-    <main class="px-4 pb-28 pt-4">
+    <main class="pb-nav px-4 pt-4">
       <slot />
     </main>
 

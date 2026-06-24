@@ -21,7 +21,7 @@ const monthlyTotals = computed(() => ({
       <button
         v-for="t in (['monthly', 'projects', 'clients'] as const)"
         :key="t"
-        class="flex-1 rounded-lg py-1.5 capitalize transition"
+        class="flex-1 rounded-lg py-2.5 capitalize transition"
         :class="tab === t ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'"
         @click="tab = t"
       >{{ t }}</button>

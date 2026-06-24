@@ -17,20 +17,24 @@ const paths: Record<string, string> = {
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur"
-    style="padding-bottom: env(safe-area-inset-bottom)"
+    class="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur"
   >
-    <ul class="mx-auto flex max-w-md items-stretch justify-between px-2">
+    <ul class="mx-auto flex max-w-md items-stretch justify-between px-1">
       <li v-for="item in items" :key="item.to" class="flex-1">
         <NuxtLink
           :to="item.to"
-          class="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-gray-400 transition"
-          active-class="!text-brand-600"
+          class="group relative flex min-h-[56px] flex-col items-center justify-center gap-1 py-1.5 text-[11px] font-medium text-gray-400 transition"
+          active-class="is-active !text-brand-600"
           :exact="item.to === '/'"
         >
-          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path :d="paths[item.icon]" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+          <!-- active pill behind the icon -->
+          <span
+            class="flex h-7 w-12 items-center justify-center rounded-full transition group-[.is-active]:bg-brand-50"
+          >
+            <svg viewBox="0 0 24 24" class="h-[22px] w-[22px]" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path :d="paths[item.icon]" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
           {{ item.label }}
         </NuxtLink>
       </li>

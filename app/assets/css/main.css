@@ -5,11 +5,24 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    /* Stop iOS Safari rubber-band on the whole page; let panels scroll. */
+    overscroll-behavior-y: none;
   }
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
-    /* Respect device safe-areas (notch / home indicator) on mobile. */
-    padding-bottom: env(safe-area-inset-bottom);
+    text-rendering: optimizeLegibility;
+  }
+  /* Lock background scrolling while a bottom sheet / modal is open. */
+  html.is-locked,
+  html.is-locked body {
+    overflow: hidden;
+    touch-action: none;
+  }
+  /* Avoid the iOS "tap to select text" lag on interactive chrome. */
+  button,
+  a,
+  [role='button'] {
+    -webkit-touch-callout: none;
   }
 }
 
@@ -17,8 +30,9 @@
   .card {
     @apply rounded-2xl bg-white shadow-sm ring-1 ring-gray-100;
   }
+  /* Buttons are sized for the thumb: min 44px tall (iOS HIG touch target). */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
     @apply btn bg-brand-600 text-white hover:bg-brand-700;
@@ -29,7 +43,25 @@
   .field-label {
     @apply mb-1 block text-sm font-medium text-gray-700;
   }
+  /* IMPORTANT: 16px font (text-base) prevents iOS Safari from auto-zooming
+     the viewport when an input is focused — essential for one-hand use. */
   .field-input {
-    @apply w-full rounded-xl border-0 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-brand-500;
+    @apply w-full rounded-xl border-0 bg-gray-50 px-3.5 py-3 text-base text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-brand-500;
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  /* Reserve space for the bottom nav (h-16 ≈ 64px) + the device home indicator. */
+  .pb-nav {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .bottom-nav-offset {
+    bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 }
