@@ -60,6 +60,14 @@ const summary = computed(() => {
           </div>
         </section>
 
+        <!-- Branded statement / PDF -->
+        <NuxtLink :to="`/projects/${id}/statement`" class="btn-ghost w-full !bg-white ring-1 ring-gray-200">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Statement / PDF
+        </NuxtLink>
+
         <!-- Tabs -->
         <div class="flex rounded-xl bg-gray-100 p-1 text-sm font-medium">
           <button

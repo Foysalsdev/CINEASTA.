@@ -29,6 +29,11 @@ export function useRepositories() {
   return {
     isMock: api.isMock,
 
+    auth: {
+      // Returns the API token to use for subsequent requests on success.
+      login: (password: string) => api.post<{ token: string }>('login', { password }),
+    },
+
     dashboard: {
       get: () => api.get<DashboardData>('dashboard'),
     },

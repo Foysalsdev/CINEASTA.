@@ -22,6 +22,11 @@
 // Leave '' to disable. Keep in sync with NUXT_PUBLIC_API_TOKEN on the frontend.
 var SCRIPT_TOKEN = '';
 
+// Passcode the owner types on the PWA login screen. Verified server-side; on
+// success the backend hands back SCRIPT_TOKEN for subsequent requests, so the
+// real password never ships inside the frontend bundle. Leave '' to allow any.
+var SCRIPT_PASSWORD = '';
+
 var SHEETS = {
   Clients: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
   Projects: ['id', 'client_id', 'project_name', 'contract_value', 'start_date', 'status', 'created_at'],
@@ -45,10 +50,11 @@ function doPost(e) {
 function handle(method, e) {
   try {
     var params = (e && e.parameter) || {};
-    if (SCRIPT_TOKEN && params.token !== SCRIPT_TOKEN) {
+    var path = params.path || '';
+    // The login route is exempt — it is how a client obtains the token.
+    if (path !== 'login' && SCRIPT_TOKEN && params.token !== SCRIPT_TOKEN) {
       return json({ ok: false, data: null, error: 'Unauthorized' });
     }
-    var path = params.path || '';
     var body = {};
     if (method === 'POST' && e.postData && e.postData.contents) {
       try { body = JSON.parse(e.postData.contents); } catch (err) { body = {}; }
@@ -79,6 +85,7 @@ function route(method, path, params, body) {
     }
   }
   switch (path) {
+    case 'login': return login(body);
     case 'client': return createClient(body);
     case 'project': return createProject(body);
     case 'payment': return createPayment(body);
@@ -328,6 +335,13 @@ function requirePositive_(v, field) {
   var n = num_(v);
   if (!(n > 0)) throw new Error(field + ' must be greater than 0');
   return n;
+}
+
+function login(body) {
+  if (SCRIPT_PASSWORD && String(body.password || '') !== SCRIPT_PASSWORD) {
+    throw new Error('Incorrect passcode');
+  }
+  return { token: SCRIPT_TOKEN };
 }
 
 function createClient(body) {

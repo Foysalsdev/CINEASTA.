@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
 
+  // Private, auth-gated PWA: render as a client-side SPA. Avoids leaking a
+  // server-rendered flash of protected financials before the auth check runs,
+  // and keeps the app-shell instantly available offline.
+  ssr: false,
+
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@vite-pwa/nuxt'],
 
   // Use flat component names (no directory prefix) for ergonomics.
@@ -21,6 +26,9 @@ export default defineNuxtConfig({
     public: {
       apiBaseUrl: '',
       apiToken: '',
+      // Passcode used ONLY in mock/demo mode (no backend). In live mode the
+      // password is verified server-side by Apps Script and never shipped here.
+      appPasscode: 'cineasta',
     },
   },
 

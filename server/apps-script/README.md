@@ -24,7 +24,10 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 
 1. In the sheet: **Extensions → Apps Script**.
 2. Replace `Code.gs` with the contents of [`Code.gs`](./Code.gs).
-3. (Optional) set `SCRIPT_TOKEN` to a random string for a shared-secret check.
+3. (Optional) set `SCRIPT_TOKEN` to a random string for a shared-secret check,
+   and `SCRIPT_PASSWORD` to the passcode the owner types on the login screen.
+   On correct passcode the backend returns `SCRIPT_TOKEN`, so the real password
+   never ships inside the frontend bundle.
 4. Run `setupSheets()` once (authorize when prompted) to create the tabs.
 
 ## 3. Deploy as a Web App
@@ -49,6 +52,7 @@ with built-in demo data — no backend required.
 
 | Method | `path`                    | Returns                                            |
 | ------ | ------------------------- | -------------------------------------------------- |
+| POST   | `login`                   | `{ token }` if the passcode matches `SCRIPT_PASSWORD` (token-exempt route) |
 | GET    | `dashboard`               | KPIs, monthly trend, breakdown, rankings, recent   |
 | GET    | `clients`                 | `Client[]`                                          |
 | GET    | `projects`                | `ProjectWithMetrics[]`                              |

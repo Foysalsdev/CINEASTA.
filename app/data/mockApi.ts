@@ -106,7 +106,14 @@ export async function mockApi<T>(
     }
   }
 
-  // ---- POST (create) ----
+  // ---- POST ----
+  if (path === 'login') {
+    const password = String((body as { password?: string })?.password ?? '')
+    const expected = params.passcode ?? ''
+    if (!expected || password === expected) return delay(ok({ token: 'mock-session' } as T), 350)
+    return delay(fail<T>('Incorrect passcode'), 350)
+  }
+
   switch (path) {
     case 'client': {
       const p = body as NewClient

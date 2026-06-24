@@ -8,8 +8,8 @@ let warnedMock = false
 
 export function useApi() {
   const config = useRuntimeConfig()
+  const auth = useAuthStore()
   const baseUrl = (config.public.apiBaseUrl || '').trim()
-  const token = (config.public.apiToken || '').trim()
   const isMock = !baseUrl
 
   if (isMock && import.meta.client && !warnedMock) {
@@ -20,20 +20,31 @@ export function useApi() {
     )
   }
 
+  // Prefer the token obtained at login; fall back to a build-time token.
+  const token = () => (auth.token || config.public.apiToken || '').trim()
+
   async function get<T>(path: string, params: Record<string, string> = {}): Promise<T> {
     if (isMock) return unwrap(await mockApi<T>('GET', path, params))
     const query = new URLSearchParams({ path, ...params })
-    if (token) query.set('token', token)
-    const res = await $fetch<ApiResponse<T>>(`${baseUrl}?${query.toString()}`, {
-      method: 'GET',
-    })
+    const t = token()
+    if (t) query.set('token', t)
+    const res = await $fetch<ApiResponse<T>>(`${baseUrl}?${query.toString()}`, { method: 'GET' })
     return unwrap(res)
   }
 
   async function post<T>(path: string, body: unknown): Promise<T> {
-    if (isMock) return unwrap(await mockApi<T>('POST', path, {}, body))
+    if (isMock) {
+      // Login is validated locally against the demo passcode in mock mode.
+      if (path === 'login') {
+        return unwrap(
+          await mockApi<T>('POST', 'login', { passcode: config.public.appPasscode || '' }, body),
+        )
+      }
+      return unwrap(await mockApi<T>('POST', path, {}, body))
+    }
     const query = new URLSearchParams({ path })
-    if (token) query.set('token', token)
+    const t = token()
+    if (t) query.set('token', t)
     // text/plain avoids a CORS preflight against the Apps Script endpoint.
     const res = await $fetch<ApiResponse<T>>(`${baseUrl}?${query.toString()}`, {
       method: 'POST',

@@ -86,9 +86,11 @@ public/icons/                # PWA icons generated from the CINEASTA logo
 
 | Route            | Screen           | Highlights                                                        |
 | ---------------- | ---------------- | ----------------------------------------------------------------- |
+| `/login`         | Passcode login   | branded lock screen; financials are private behind a passcode      |
 | `/`              | Dashboard        | 6 KPI cards, monthly trend, expense donut, top projects/clients, recent activity, quick-add |
-| `/projects`      | Projects         | searchable list with received/due/profit + collection bar         |
+| `/projects`      | Projects         | searchable list with received/cost/profit, per-row Details + PDF actions |
 | `/projects/[id]` | Project detail   | summary grid + Overview / Payments / Expenses tabs, scoped quick-add |
+| `/projects/[id]/statement` | Statement | branded, printable statement → Print / Save as PDF (works on iPhone) |
 | `/payments`      | Payments         | all payments, total received                                      |
 | `/expenses`      | Expenses         | all expenses, total spent                                         |
 | `/reports`       | Reports          | Monthly · Project Profit · Client Revenue tables                  |
@@ -114,6 +116,15 @@ opening a Quick-Add sheet. Every list has explicit loading, empty and error stat
 
 See [`server/apps-script/README.md`](server/apps-script/README.md) for the exact
 column layout, deployment steps and the full endpoint table.
+
+## Login / security
+
+The app is a private, auth-gated SPA (`ssr: false`) — every route is behind a
+passcode (`/login`). In **mock/demo mode** the passcode is `cineasta`
+(override with `NUXT_PUBLIC_APP_PASSCODE`). In **live mode** the passcode is
+verified server-side by Apps Script (`SCRIPT_PASSWORD`); on success the backend
+returns the API token, so the real password never ships in the client bundle.
+Multi-user accounts are deferred to Phase 3.
 
 ## PWA
 
