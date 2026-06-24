@@ -1,18 +1,25 @@
-import type {
-  ExpenseCategory,
-  PaymentMethod,
-  ProjectStatus,
-} from '~/types'
+import type { PaymentMethod, ProjectStatus } from '~/types'
 
-export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  'Salary',
-  'Marketing',
-  'Software',
-  'Hosting',
-  'Freelancer',
-  'Transport',
-  'Office',
-  'Other',
+// Default category SUGGESTIONS for the expense typeahead. These are not
+// enforced — the user can type any category. Tuned for film production based on
+// the agency's quotation format.
+export const EXPENSE_CATEGORIES: string[] = [
+  'Directorial Team',
+  'DOP & Camera Unit',
+  'Light & Gear',
+  'Art / Set',
+  'Prop & Wardrobe',
+  'Costume & Makeup',
+  'Artist & Casting',
+  'Location & Studio Rental',
+  'Transportation',
+  'Catering & Meal',
+  'Production Crew',
+  'Generator & Fuel',
+  'Post Production',
+  'Sound & Music',
+  'Computer Graphics (CG)',
+  'Miscellaneous',
 ]
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -32,16 +39,25 @@ export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ]
 
-// Stable colour map for charts/badges so a category/status always looks the same.
-export const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  Salary: '#176a3a',
-  Marketing: '#1f7d49',
-  Software: '#3f9866',
-  Hosting: '#71b48d',
-  Freelancer: '#d97706',
-  Transport: '#2563eb',
-  Office: '#9333ea',
-  Other: '#64748b',
+// Categories are free-form, so colours are derived deterministically from the
+// category name (same name → same colour every time) rather than a fixed map.
+const CHART_PALETTE = [
+  '#176a3a',
+  '#2563eb',
+  '#d97706',
+  '#9333ea',
+  '#dc2626',
+  '#0891b2',
+  '#65a30d',
+  '#db2777',
+  '#475569',
+  '#ca8a04',
+]
+
+export function categoryColor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return CHART_PALETTE[hash % CHART_PALETTE.length]!
 }
 
 export const STATUS_STYLES: Record<ProjectStatus, string> = {

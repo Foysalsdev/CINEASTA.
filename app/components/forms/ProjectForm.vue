@@ -21,6 +21,10 @@ const form = reactive<NewProject>({
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
 
+const clientOptions = computed(() =>
+  clients.items.map((c) => ({ value: c.id, label: c.name, hint: c.phone })),
+)
+
 function validate(): boolean {
   errors.client_id = form.client_id ? '' : 'Select a client'
   errors.project_name = form.project_name.trim() ? '' : 'Project name is required'
@@ -47,10 +51,7 @@ async function submit() {
   <form class="space-y-4" @submit.prevent="submit">
     <div>
       <label class="field-label">Client *</label>
-      <select v-model="form.client_id" class="field-input">
-        <option value="" disabled>Select a client…</option>
-        <option v-for="c in clients.items" :key="c.id" :value="c.id">{{ c.name }}</option>
-      </select>
+      <Combobox v-model="form.client_id" :options="clientOptions" mode="select" placeholder="Search a client…" />
       <p v-if="errors.client_id" class="mt-1 text-xs text-red-600">{{ errors.client_id }}</p>
       <p v-if="!clients.items.length && clients.loaded" class="mt-1 text-xs text-gray-400">
         No clients yet — add one first from the Quick Add menu.

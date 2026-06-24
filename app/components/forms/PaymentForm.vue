@@ -22,6 +22,10 @@ const form = reactive<NewPayment>({
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
 
+const projectOptions = computed(() =>
+  projects.items.map((p) => ({ value: p.id, label: p.project_name, hint: p.client_name })),
+)
+
 function validate(): boolean {
   errors.project_id = form.project_id ? '' : 'Select a project'
   errors.amount = form.amount > 0 ? '' : 'Amount must be greater than 0'
@@ -47,12 +51,7 @@ async function submit() {
   <form class="space-y-4" @submit.prevent="submit">
     <div v-if="!defaultProjectId">
       <label class="field-label">Project *</label>
-      <select v-model="form.project_id" class="field-input">
-        <option value="" disabled>Select a project…</option>
-        <option v-for="p in projects.items" :key="p.id" :value="p.id">
-          {{ p.project_name }} — {{ p.client_name }}
-        </option>
-      </select>
+      <Combobox v-model="form.project_id" :options="projectOptions" mode="select" placeholder="Search a project…" />
       <p v-if="errors.project_id" class="mt-1 text-xs text-red-600">{{ errors.project_id }}</p>
     </div>
     <div class="grid grid-cols-2 gap-3">

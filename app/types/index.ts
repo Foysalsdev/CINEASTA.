@@ -15,15 +15,11 @@ export type PaymentMethod =
   | 'cheque'
   | 'other'
 
-export type ExpenseCategory =
-  | 'Salary'
-  | 'Marketing'
-  | 'Software'
-  | 'Hosting'
-  | 'Freelancer'
-  | 'Transport'
-  | 'Office'
-  | 'Other'
+// Expense categories are FREE-FORM (a production house has highly variable
+// line items — DOP, Camera Van + Fuel, Props, Generator Oil, …). We keep the
+// alias for readability but it is just a string; a suggestion list lives in
+// constants.ts to power the typeahead.
+export type ExpenseCategory = string
 
 // --- Sheet: Clients --------------------------------------------------------
 export interface Client {

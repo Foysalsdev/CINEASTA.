@@ -12,7 +12,7 @@ import type {
   ProjectStatus,
 } from '~/types'
 
-const STORAGE_KEY = 'cineasta:mockdb:v1'
+const STORAGE_KEY = 'cineasta:mockdb:v2'
 
 export interface MockDB {
   clients: Client[]
@@ -60,16 +60,16 @@ function seed(): MockDB {
     id, project_id, category, amount, expense_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
   })
   const expenses: Expense[] = [
-    exp('e1', 'p1', 'Freelancer', 80000, 130),
-    exp('e2', 'p1', 'Software', 12000, 120),
-    exp('e3', 'p1', 'Transport', 9000, 55),
-    exp('e4', 'p2', 'Salary', 40000, 72),
-    exp('e5', 'p3', 'Marketing', 60000, 100),
-    exp('e6', 'p3', 'Freelancer', 50000, 96),
-    exp('e7', 'p4', 'Hosting', 8000, 48),
-    exp('e8', 'p4', 'Software', 15000, 20),
-    exp('e9', 'p5', 'Office', 7000, 25),
-    exp('e10', 'p5', 'Transport', 5000, 10),
+    exp('e1', 'p1', 'DOP & Camera Unit', 80000, 130),
+    exp('e2', 'p1', 'Light & Gear', 42000, 120),
+    exp('e3', 'p1', 'Transportation', 19000, 55),
+    exp('e4', 'p2', 'Directorial Team', 40000, 72),
+    exp('e5', 'p3', 'Artist & Casting', 60000, 100),
+    exp('e6', 'p3', 'Catering & Meal', 28000, 96),
+    exp('e7', 'p4', 'Location & Studio Rental', 35000, 48),
+    exp('e8', 'p4', 'Post Production', 25000, 20),
+    exp('e9', 'p5', 'Prop & Wardrobe', 17000, 25),
+    exp('e10', 'p5', 'Generator & Fuel', 9000, 10),
   ]
 
   return { clients, projects, payments, expenses }

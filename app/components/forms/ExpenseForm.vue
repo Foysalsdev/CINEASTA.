@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExpenseCategory, NewExpense } from '~/types'
+import type { NewExpense } from '~/types'
 import { EXPENSE_CATEGORIES } from '~/utils/constants'
 
 const props = defineProps<{ defaultProjectId?: string }>()
@@ -9,18 +9,35 @@ const projects = useProjectsStore()
 const expenses = useExpensesStore()
 const ui = useUiStore()
 
-onMounted(() => projects.fetch())
+onMounted(() => {
+  projects.fetch()
+  expenses.fetch() // load past expenses to suggest categories
+})
 
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive<NewExpense>({
   project_id: props.defaultProjectId ?? '',
-  category: 'Other' as ExpenseCategory,
+  category: '',
   amount: 0,
   expense_date: today,
   notes: '',
 })
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
+
+// Searchable project options.
+const projectOptions = computed(() =>
+  projects.items.map((p) => ({ value: p.id, label: p.project_name, hint: p.client_name })),
+)
+
+// Category suggestions = previously-used categories first, then defaults.
+const categoryOptions = computed(() => {
+  const used = Array.from(new Set(expenses.items.map((e) => String(e.category || '').trim()).filter(Boolean)))
+  const seen = new Set(used.map((c) => c.toLowerCase()))
+  const merged = [...used]
+  for (const c of EXPENSE_CATEGORIES) if (!seen.has(c.toLowerCase())) merged.push(c)
+  return merged.map((c) => ({ value: c, label: c }))
+})
 
 function validate(): boolean {
   errors.project_id = form.project_id ? '' : 'Select a project'
@@ -32,7 +49,11 @@ async function submit() {
   if (!validate() || saving.value) return
   saving.value = true
   try {
-    await expenses.add({ ...form, amount: Number(form.amount) || 0 })
+    await expenses.add({
+      ...form,
+      category: form.category.trim() || 'Uncategorized',
+      amount: Number(form.amount) || 0,
+    })
     ui.toast('Expense added')
     emit('saved')
   } catch (e) {
@@ -47,20 +68,13 @@ async function submit() {
   <form class="space-y-4" @submit.prevent="submit">
     <div v-if="!defaultProjectId">
       <label class="field-label">Project *</label>
-      <select v-model="form.project_id" class="field-input">
-        <option value="" disabled>Select a project…</option>
-        <option v-for="p in projects.items" :key="p.id" :value="p.id">
-          {{ p.project_name }} — {{ p.client_name }}
-        </option>
-      </select>
+      <Combobox v-model="form.project_id" :options="projectOptions" mode="select" placeholder="Search a project…" />
       <p v-if="errors.project_id" class="mt-1 text-xs text-red-600">{{ errors.project_id }}</p>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <div>
         <label class="field-label">Category</label>
-        <select v-model="form.category" class="field-input">
-          <option v-for="c in EXPENSE_CATEGORIES" :key="c" :value="c">{{ c }}</option>
-        </select>
+        <Combobox v-model="form.category" :options="categoryOptions" mode="free" placeholder="Type or pick…" />
       </div>
       <div>
         <label class="field-label">Amount *</label>

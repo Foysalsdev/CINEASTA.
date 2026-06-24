@@ -29,7 +29,8 @@ var SHEETS = {
   Expenses: ['id', 'project_id', 'category', 'amount', 'expense_date', 'notes', 'created_at']
 };
 
-var EXPENSE_CATEGORIES = ['Salary', 'Marketing', 'Software', 'Hosting', 'Freelancer', 'Transport', 'Office', 'Other'];
+// Expense categories are free-form; this list is only reference documentation.
+var EXPENSE_CATEGORIES = ['Directorial Team', 'DOP & Camera Unit', 'Light & Gear', 'Art / Set', 'Prop & Wardrobe', 'Costume & Makeup', 'Artist & Casting', 'Location & Studio Rental', 'Transportation', 'Catering & Meal', 'Production Crew', 'Generator & Fuel', 'Post Production', 'Sound & Music', 'Computer Graphics (CG)', 'Miscellaneous'];
 
 // ---- HTTP entry points ------------------------------------------------------
 
@@ -266,7 +267,7 @@ function monthlyTrend_(payments, expenses, monthsBack) {
 function expenseBreakdown_(expenses) {
   var totals = {};
   expenses.forEach(function (x) {
-    var cat = EXPENSE_CATEGORIES.indexOf(x.category) >= 0 ? x.category : 'Other';
+    var cat = (x.category && String(x.category).trim()) || 'Uncategorized';
     totals[cat] = (totals[cat] || 0) + num_(x.amount);
   });
   var grand = 0; Object.keys(totals).forEach(function (k) { grand += totals[k]; });
@@ -371,7 +372,8 @@ function createPayment(body) {
 
 function createExpense(body) {
   requireText_(body.project_id, 'Project');
-  var category = EXPENSE_CATEGORIES.indexOf(body.category) >= 0 ? body.category : 'Other';
+  // Categories are free-form (variable production line items).
+  var category = (body.category && String(body.category).trim()) || 'Uncategorized';
   var row = {
     id: genId_('e'),
     project_id: body.project_id,

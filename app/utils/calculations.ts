@@ -23,7 +23,6 @@ import type {
   RankedClient,
   RankedProject,
 } from '~/types'
-import { EXPENSE_CATEGORIES } from './constants'
 
 // --- Primitive helpers -----------------------------------------------------
 
@@ -236,7 +235,8 @@ export function monthlyTrend(
 export function expenseBreakdown(expenses: Expense[]): CategoryBreakdownPoint[] {
   const totals = new Map<ExpenseCategory, number>()
   for (const e of expenses) {
-    const cat = (EXPENSE_CATEGORIES.includes(e.category) ? e.category : 'Other') as ExpenseCategory
+    // Free-form categories: group by whatever was entered, blanks → Uncategorized.
+    const cat = (e.category && String(e.category).trim()) || 'Uncategorized'
     totals.set(cat, (totals.get(cat) ?? 0) + num(e.amount))
   }
   const grandTotal = round2([...totals.values()].reduce((a, b) => a + b, 0))

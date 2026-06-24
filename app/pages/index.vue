@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CATEGORY_COLORS } from '~/utils/constants'
+import { categoryColor } from '~/utils/constants'
 
 const dashboard = useDashboardStore()
 const projects = useProjectsStore()
@@ -30,7 +30,7 @@ const breakdownSlices = computed(
     d.value?.expenseBreakdown.map((e) => ({
       label: e.category,
       value: e.amount,
-      color: CATEGORY_COLORS[e.category],
+      color: categoryColor(e.category),
     })) ?? [],
 )
 
