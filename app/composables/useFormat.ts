@@ -1,15 +1,11 @@
 // Presentation-only formatting helpers (no business math here).
 export function useFormat() {
-  const currency = (value: number, opts: { compact?: boolean } = {}) => {
+  // Always show the FULL amount with thousands separators (e.g. ৳4,50,000).
+  // `compact` is accepted for backward-compatibility but intentionally ignored —
+  // the app shows full numbers, never abbreviated (450K) values.
+  const currency = (value: number, _opts: { compact?: boolean } = {}) => {
     const n = Number.isFinite(value) ? value : 0
-    if (opts.compact && Math.abs(n) >= 1000) {
-      const formatted = new Intl.NumberFormat('en-US', {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-      }).format(n)
-      return `৳${formatted}`
-    }
-    return `৳${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n)}`
+    return `৳${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n)}`
   }
 
   const number = (value: number) =>
