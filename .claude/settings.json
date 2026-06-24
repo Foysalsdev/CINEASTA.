@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ ! -d node_modules ]; then echo 'Installing dependencies…'; npm install --no-audit --no-fund; fi; npx nuxt prepare >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
