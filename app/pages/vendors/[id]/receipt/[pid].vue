@@ -46,7 +46,7 @@ function printNow() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 pb-10">
+  <div class="min-h-screen bg-gray-100 pb-10 print:min-h-0 print:bg-white print:pb-0">
     <div class="no-print sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
       <NuxtLink :to="`/vendors/${id}`" class="inline-flex items-center gap-1 text-sm font-medium text-gray-500">
         <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -61,8 +61,8 @@ function printNow() {
     </div>
 
     <StateBlock :loading="vendors.detailLoading && !detail" :error="vendors.error" :rows="6" @retry="vendors.fetchOne(id)">
-      <div v-if="detail && payment" class="px-3 py-4 sm:px-6">
-        <div class="mx-auto max-w-[800px] overflow-hidden rounded-2xl shadow-sm">
+      <div v-if="detail && payment" class="px-3 py-4 sm:px-6 print:p-0">
+        <div class="mx-auto max-w-[800px] overflow-hidden rounded-2xl shadow-sm print:max-w-none print:overflow-visible print:rounded-none print:shadow-none">
           <VendorReceipt
             :vendor="detail.vendor"
             :payment="payment"
