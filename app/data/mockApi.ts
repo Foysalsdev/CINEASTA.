@@ -37,7 +37,7 @@ function ok<T>(data: T): ApiResponse<T> {
 function fail<T>(message: string): ApiResponse<T> {
   return { ok: false, data: null, error: message }
 }
-function delay<T>(value: T, ms = 220): Promise<T> {
+function delay<T>(value: T, ms = 90): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
 }
 
