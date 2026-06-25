@@ -24,6 +24,7 @@ import type {
   RankedClient,
   RankedProject,
   Vendor,
+  VendorBillLine,
   VendorDetail,
   VendorPayment,
   VendorSummary,
@@ -409,6 +410,30 @@ export function buildProjectVendors(
     })
   }
   return lines.sort((a, b) => b.due - a.due)
+}
+
+/**
+ * Spread a lump sum across a vendor's outstanding bills, oldest first. Any
+ * remainder beyond the total due is recorded as an unallocated advance
+ * (bill_id: '').
+ */
+export function allocatePayment(
+  bills: VendorBillLine[],
+  amount: number,
+): { bill_id: string; amount: number }[] {
+  const sorted = bills
+    .filter((b) => b.due > 0)
+    .sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime())
+  const out: { bill_id: string; amount: number }[] = []
+  let rem = amount
+  for (const b of sorted) {
+    if (rem <= 0.001) break
+    const a = Math.min(rem, b.due)
+    out.push({ bill_id: b.id, amount: round2(a) })
+    rem = round2(rem - a)
+  }
+  if (rem > 0.001) out.push({ bill_id: '', amount: round2(rem) })
+  return out
 }
 
 /** Total outstanding payables across all vendors (never negative overall). */
