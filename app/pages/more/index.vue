@@ -27,7 +27,8 @@ const groups = [
   <div class="space-y-5">
     <h1 class="text-xl font-bold text-gray-900">More</h1>
 
-    <section v-for="g in groups" :key="g.title" class="space-y-2">
+    <div class="space-y-5 lg:columns-2 lg:gap-5 lg:space-y-0">
+    <section v-for="g in groups" :key="g.title" class="space-y-2 lg:mb-5 lg:break-inside-avoid">
       <p class="px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ g.title }}</p>
       <ul class="card divide-y divide-gray-100">
         <li v-for="item in g.items" :key="item.to">
@@ -45,7 +46,7 @@ const groups = [
       </ul>
     </section>
 
-    <section class="space-y-2">
+    <section class="space-y-2 lg:mb-5 lg:break-inside-avoid">
       <p class="px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Account</p>
       <ul class="card divide-y divide-gray-100">
         <li>
@@ -59,5 +60,6 @@ const groups = [
       </ul>
       <p v-if="isMock" class="px-1 text-center text-xs text-amber-600">Demo mode — local data only.</p>
     </section>
+    </div>
   </div>
 </template>
