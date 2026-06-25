@@ -63,9 +63,17 @@ async function onPaid() {
 
         <SectionCard v-else-if="tab === 'bills'" :title="`Bills (${detail.bills.length})`">
           <ul v-if="detail.bills.length" class="divide-y divide-gray-100">
-            <li v-for="b in detail.bills" :key="b.id" class="flex items-center justify-between py-2.5">
-              <div><p class="text-sm font-medium text-gray-800">{{ b.category }}</p><p class="text-xs text-gray-400">{{ EXPENSE_TYPE_LABEL[b.type] }} · {{ date(b.expense_date) }}</p></div>
-              <span class="text-sm font-semibold text-red-600">{{ currency(b.amount) }}</span>
+            <li v-for="b in detail.bills" :key="b.id" class="flex items-center justify-between gap-2 py-2.5">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-gray-800">{{ b.category }}</p>
+                <p class="text-xs text-gray-400">{{ EXPENSE_TYPE_LABEL[b.type] }} · {{ date(b.expense_date) }}</p>
+              </div>
+              <div class="shrink-0 text-right">
+                <p class="text-sm font-semibold text-gray-800">{{ currency(b.amount) }}</p>
+                <p class="text-[11px]" :class="b.due > 0 ? 'text-amber-600' : 'text-brand-600'">
+                  {{ b.due > 0 ? `Due ${currency(b.due)}` : 'Paid' }}
+                </p>
+              </div>
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No bills from this vendor.</p>
@@ -82,7 +90,7 @@ async function onPaid() {
         </SectionCard>
 
         <AppModal v-if="paying" title="Pay Vendor" @close="paying = false">
-          <VendorPaymentForm :default-vendor-id="id" :due-hint="s.due" @saved="onPaid" @cancel="paying = false" />
+          <VendorPaymentForm :vendor-id="id" :bills="detail.bills" @saved="onPaid" @cancel="paying = false" />
         </AppModal>
       </template>
     </StateBlock>

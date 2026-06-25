@@ -45,5 +45,12 @@ export const useVendorsStore = defineStore('vendors', {
       await useRepositories().vendors.pay(payload)
       if (this.current?.vendor.id === payload.vendor_id) await this.fetchOne(payload.vendor_id)
     },
+    // Per-bill allocation: record one payment per allocated bill, refetch once.
+    async payBills(list: NewVendorPayment[]) {
+      const repo = useRepositories().vendors
+      for (const p of list) await repo.pay(p)
+      const vid = list[0]?.vendor_id
+      if (vid && this.current?.vendor.id === vid) await this.fetchOne(vid)
+    },
   },
 })

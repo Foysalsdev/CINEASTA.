@@ -99,14 +99,15 @@ function seed(): MockDB {
     exp('e13', 'maintenance', '', '', 'a1', 'Sensor Cleaning', 6000, 18),
   ]
 
-  const vp = (id: string, vendor_id: string, amount: number, method: PaymentMethod, daysAgo: number): VendorPayment => ({
-    id, vendor_id, amount, payment_method: method, payment_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
+  const vp = (id: string, vendor_id: string, bill_id: string, amount: number, method: PaymentMethod, daysAgo: number): VendorPayment => ({
+    id, vendor_id, bill_id, amount, payment_method: method, payment_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
   })
   const vendorPayments: VendorPayment[] = [
-    vp('vp1', 'v1', 300000, 'bank', 150), // partially covers camera + rental
-    vp('vp2', 'v2', 30000, 'cash', 110),
-    vp('vp3', 'v3', 45000, 'bkash', 98),
-    // v4 unpaid → shows as due
+    vp('vp1', 'v1', 'e12', 200000, 'bank', 150), // camera body 280k → 80k due
+    vp('vp2', 'v1', 'e1', 80000, 'bank', 128), // DOP bill fully paid
+    vp('vp3', 'v2', 'e2', 30000, 'cash', 110), // light 42k → 12k due
+    vp('vp4', 'v3', 'e5', 45000, 'bkash', 98), // artist 60k → 15k due
+    // v4 bill e7 (35k) and v2 bill e9 (17k) unpaid → due
   ]
 
   const assets: Asset[] = [

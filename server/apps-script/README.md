@@ -20,7 +20,7 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 | Payments       | `id, project_id, amount, payment_method, payment_date, notes, created_at`    |
 | Expenses       | `id, type, project_id, vendor_id, asset_id, category, amount, expense_date, notes, created_at` |
 | Vendors        | `id, name, phone, email, notes, created_at`                                  |
-| VendorPayments | `id, vendor_id, amount, payment_method, payment_date, notes, created_at`     |
+| VendorPayments | `id, vendor_id, bill_id, amount, payment_method, payment_date, notes, created_at` |
 | Assets         | `id, name, category, purchase_value, purchase_date, notes, created_at`       |
 
 `Expenses.type` is one of `project · internal · asset · maintenance` (single

@@ -336,15 +336,30 @@ export function buildVendorSummary(
   }
 }
 
+/** Amount allocated to a single bill across vendor payments. */
+export function billPaid(vendorPayments: VendorPayment[], billId: string): number {
+  return sumBy(
+    vendorPayments.filter((vp) => vp.bill_id === billId),
+    (vp) => vp.amount,
+  )
+}
+
 export function buildVendorDetail(
   vendor: Vendor,
   expenses: Expense[],
   vendorPayments: VendorPayment[],
 ): VendorDetail {
+  const pays = vendorPayments.filter((vp) => vp.vendor_id === vendor.id)
+  const bills = expenses
+    .filter((e) => e.vendor_id === vendor.id)
+    .map((b) => {
+      const paid = billPaid(pays, b.id)
+      return { ...b, paid, due: round2(Math.max(0, num(b.amount) - paid)) }
+    })
   return {
     vendor,
-    bills: expenses.filter((e) => e.vendor_id === vendor.id),
-    payments: vendorPayments.filter((vp) => vp.vendor_id === vendor.id),
+    bills,
+    payments: pays,
     summary: buildVendorSummary(vendor.id, expenses, vendorPayments),
   }
 }

@@ -80,10 +80,11 @@ export interface Vendor {
   created_at: string
 }
 
-// --- Sheet: VendorPayments (money paid TO a vendor) ------------------------
+// --- Sheet: VendorPayments (money paid TO a vendor, allocated per bill) -----
 export interface VendorPayment {
   id: ID
   vendor_id: ID
+  bill_id: ID // the expense/bill this payment is allocated to ('' = unallocated/advance)
   amount: number
   payment_method: PaymentMethod
   payment_date: string
@@ -216,9 +217,15 @@ export interface VendorSummary {
   paymentCount: number
 }
 
+// A vendor bill (expense) with its per-bill paid/due derived from allocations.
+export interface VendorBillLine extends Expense {
+  paid: number
+  due: number
+}
+
 export interface VendorDetail {
   vendor: Vendor
-  bills: Expense[]
+  bills: VendorBillLine[]
   payments: VendorPayment[]
   summary: VendorSummary
 }

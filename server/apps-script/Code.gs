@@ -33,7 +33,7 @@ var SHEETS = {
   Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
   Expenses: ['id', 'type', 'project_id', 'vendor_id', 'asset_id', 'category', 'amount', 'expense_date', 'notes', 'created_at'],
   Vendors: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
-  VendorPayments: ['id', 'vendor_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
+  VendorPayments: ['id', 'vendor_id', 'bill_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
   Assets: ['id', 'name', 'category', 'purchase_value', 'purchase_date', 'notes', 'created_at']
 };
 
@@ -354,8 +354,17 @@ function vendorDetail(id) {
   var vendor = null;
   for (var i = 0; i < vendors.length; i++) if (vendors[i].id === id) { vendor = vendors[i]; break; }
   if (!vendor) throw new Error('Vendor not found');
-  var s = vendorSummary_(id, readAll('Expenses'), readAll('VendorPayments'));
-  return { vendor: vendor, bills: s.bills, payments: s.payments, summary: { totalBilled: s.totalBilled, totalPaid: s.totalPaid, due: s.due, billCount: s.billCount, paymentCount: s.paymentCount } };
+  var allExp = readAll('Expenses');
+  var allVp = readAll('VendorPayments');
+  var s = vendorSummary_(id, allExp, allVp);
+  var pays = s.payments;
+  var bills = s.bills.map(function (b) {
+    var paid = sumBy_(pays.filter(function (vp) { return vp.bill_id === b.id; }), function (vp) { return vp.amount; });
+    b.paid = paid;
+    b.due = round2_(Math.max(0, num_(b.amount) - paid));
+    return b;
+  });
+  return { vendor: vendor, bills: bills, payments: pays, summary: { totalBilled: s.totalBilled, totalPaid: s.totalPaid, due: s.due, billCount: s.billCount, paymentCount: s.paymentCount } };
 }
 
 function buildVendorDuesReport() {
@@ -463,6 +472,7 @@ function createVendorPayment(body) {
   var row = {
     id: genId_('vp'),
     vendor_id: body.vendor_id,
+    bill_id: body.bill_id || '',
     amount: requirePositive_(body.amount, 'Amount'),
     payment_method: body.payment_method || 'other',
     payment_date: body.payment_date || today_(),
