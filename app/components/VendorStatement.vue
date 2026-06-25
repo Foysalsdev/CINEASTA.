@@ -34,9 +34,9 @@ const dueTotal = computed(() => sumBy(props.detail.bills, (b) => b.due))
   <article class="print-page mx-auto w-full max-w-[800px] bg-white p-8 text-gray-900">
     <!-- Brand header -->
     <header class="print-keep flex items-start justify-between border-b-2 border-brand-600 pb-5">
-      <div class="flex items-center gap-3">
-        <BrandMark :size="56" />
-        <p class="text-xs text-gray-400">Agency Profit Tracker</p>
+      <div>
+        <p class="text-2xl font-extrabold leading-none tracking-tight text-brand-700">CINEASTA<span class="text-brand-500">.</span></p>
+        <p class="mt-1.5 text-xs text-gray-400">Agency Profit Tracker</p>
       </div>
       <div class="text-right">
         <p class="text-lg font-bold">Vendor Statement</p>
