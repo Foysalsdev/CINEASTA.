@@ -31,7 +31,7 @@ var SHEETS = {
   Clients: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
   Projects: ['id', 'client_id', 'project_name', 'contract_value', 'start_date', 'status', 'created_at'],
   Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
-  Expenses: ['id', 'project_id', 'category', 'amount', 'expense_date', 'notes', 'created_at']
+  Expenses: ['id', 'project_id', 'category', 'vendor', 'total_bill', 'paid', 'expense_date', 'notes', 'created_at']
 };
 
 // Expense categories are free-form; this list is only reference documentation.
@@ -81,6 +81,7 @@ function route(method, path, params, body) {
       case 'reports/monthly': return buildMonthlyReport(12);
       case 'reports/project-profit': return buildProjectProfitReport();
       case 'reports/client-revenue': return buildClientRevenueReport();
+      case 'reports/vendor-dues': return buildVendorDuesReport();
       default: throw new Error('Unknown GET route: ' + path);
     }
   }
@@ -165,12 +166,16 @@ function monthLabel_(key) {
 
 function computeMetrics_(project, payments, expenses) {
   var received = sumBy_(payments, function (p) { return p.amount; });
-  var expense = sumBy_(expenses, function (x) { return x.amount; });
+  var expense = sumBy_(expenses, function (x) { return x.total_bill; });
+  var paid = sumBy_(expenses, function (x) { return x.paid; });
+  var expenseDue = sumBy_(expenses, function (x) { return Math.max(0, num_(x.total_bill) - num_(x.paid)); });
   var profit = round2_(received - expense);
   var contract = num_(project.contract_value);
   return {
     totalReceived: received,
     totalExpense: expense,
+    expensePaid: paid,
+    expenseDue: expenseDue,
     outstandingDue: round2_(Math.max(0, contract - received)),
     currentProfit: profit,
     expectedProfit: round2_(contract - expense),
@@ -232,7 +237,8 @@ function buildDashboard() {
   var withMetrics = projectsWithMetrics();
 
   var totalRevenue = sumBy_(payments, function (p) { return p.amount; });
-  var totalExpense = sumBy_(expenses, function (x) { return x.amount; });
+  var totalExpense = sumBy_(expenses, function (x) { return x.total_bill; });
+  var payableDue = sumBy_(expenses, function (x) { return Math.max(0, num_(x.total_bill) - num_(x.paid)); });
   var totalContract = sumBy_(projects, function (p) { return p.contract_value; });
   var totalProjectProfit = sumBy_(withMetrics, function (p) { return p.metrics.currentProfit; });
 
@@ -242,6 +248,7 @@ function buildDashboard() {
       totalExpense: totalExpense,
       netProfit: round2_(totalRevenue - totalExpense),
       outstandingDue: round2_(Math.max(0, totalContract - totalRevenue)),
+      payableDue: payableDue,
       collectionRate: round2_(safeDivide_(totalRevenue, totalContract) * 100),
       averageProjectProfit: round2_(safeDivide_(totalProjectProfit, projects.length)),
       projectCount: projects.length,
@@ -259,7 +266,7 @@ function buildDashboard() {
 function monthlyTrend_(payments, expenses, monthsBack) {
   var rev = {}, exp = {};
   payments.forEach(function (p) { var k = monthKey_(p.payment_date); if (k) rev[k] = (rev[k] || 0) + num_(p.amount); });
-  expenses.forEach(function (x) { var k = monthKey_(x.expense_date); if (k) exp[k] = (exp[k] || 0) + num_(x.amount); });
+  expenses.forEach(function (x) { var k = monthKey_(x.expense_date); if (k) exp[k] = (exp[k] || 0) + num_(x.total_bill); });
   var keys = [], now = new Date();
   for (var i = monthsBack - 1; i >= 0; i--) {
     var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -275,7 +282,7 @@ function expenseBreakdown_(expenses) {
   var totals = {};
   expenses.forEach(function (x) {
     var cat = (x.category && String(x.category).trim()) || 'Uncategorized';
-    totals[cat] = (totals[cat] || 0) + num_(x.amount);
+    totals[cat] = (totals[cat] || 0) + num_(x.total_bill);
   });
   var grand = 0; Object.keys(totals).forEach(function (k) { grand += totals[k]; });
   return Object.keys(totals).map(function (cat) {
@@ -323,6 +330,23 @@ function buildClientRevenueReport() {
   return clients.map(function (c) {
     return { id: c.id, client: c.name, revenue: round2_(rev[c.id] || 0), projectCount: cnt[c.id] || 0 };
   }).sort(function (a, b) { return b.revenue - a.revenue; });
+}
+
+function buildVendorDuesReport() {
+  var expenses = readAll('Expenses');
+  var byVendor = {};
+  expenses.forEach(function (e) {
+    var vendor = (e.vendor && String(e.vendor).trim()) || (e.category && String(e.category).trim()) || 'Unknown';
+    var a = byVendor[vendor] || { bill: 0, paid: 0, count: 0 };
+    a.bill += num_(e.total_bill);
+    a.paid += num_(e.paid);
+    a.count += 1;
+    byVendor[vendor] = a;
+  });
+  return Object.keys(byVendor).map(function (vendor) {
+    var a = byVendor[vendor];
+    return { vendor: vendor, totalBill: round2_(a.bill), paid: round2_(a.paid), due: round2_(Math.max(0, a.bill - a.paid)), billCount: a.count };
+  }).sort(function (x, y) { return y.due - x.due; });
 }
 
 // ---- Create operations (with validation) ------------------------------------
@@ -386,13 +410,17 @@ function createPayment(body) {
 
 function createExpense(body) {
   requireText_(body.project_id, 'Project');
-  // Categories are free-form (variable production line items).
+  // Categories and vendors are free-form (variable production line items).
   var category = (body.category && String(body.category).trim()) || 'Uncategorized';
+  var totalBill = requirePositive_(body.total_bill, 'Total bill');
+  var paid = Math.min(Math.max(0, num_(body.paid)), totalBill);
   var row = {
     id: genId_('e'),
     project_id: body.project_id,
     category: category,
-    amount: requirePositive_(body.amount, 'Amount'),
+    vendor: (body.vendor && String(body.vendor).trim()) || '',
+    total_bill: totalBill,
+    paid: paid,
     expense_date: body.expense_date || today_(),
     notes: body.notes || '',
     created_at: nowIso_()

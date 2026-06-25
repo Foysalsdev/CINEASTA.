@@ -60,7 +60,8 @@ const topClients = computed(
             :value="currency(d.kpis.netProfit, { compact: true })"
             :tone="d.kpis.netProfit >= 0 ? 'positive' : 'negative'"
           />
-          <KpiCard label="Outstanding Due" :value="currency(d.kpis.outstandingDue, { compact: true })" tone="warning" />
+          <KpiCard label="Receivable Due" :value="currency(d.kpis.outstandingDue, { compact: true })" tone="warning" sub="clients owe us" />
+          <KpiCard label="Payable Due" :value="currency(d.kpis.payableDue, { compact: true })" tone="warning" sub="we owe vendors" />
           <KpiCard label="Collection Rate" :value="percent(d.kpis.collectionRate)" :sub="`${d.kpis.projectCount} projects · ${d.kpis.clientCount} clients`" />
           <KpiCard label="Avg Project Profit" :value="currency(d.kpis.averageProjectProfit, { compact: true })" />
         </section>
@@ -107,9 +108,9 @@ const topClients = computed(
             <li v-for="e in d.recentExpenses" :key="e.id" class="flex items-center justify-between py-2.5">
               <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-gray-800">{{ projectName(e.project_id) }}</p>
-                <p class="text-xs text-gray-400">{{ date(e.expense_date) }} · {{ e.category }}</p>
+                <p class="text-xs text-gray-400">{{ date(e.expense_date) }} · {{ e.vendor || e.category }}</p>
               </div>
-              <span class="text-sm font-semibold text-red-600">-{{ currency(e.amount) }}</span>
+              <span class="text-sm font-semibold text-red-600">-{{ currency(e.total_bill) }}</span>
             </li>
           </ul>
           <p v-else class="py-4 text-center text-sm text-gray-400">No expenses yet.</p>

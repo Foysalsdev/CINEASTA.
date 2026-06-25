@@ -15,6 +15,7 @@ import type {
   Project,
   ProjectProfitReportRow,
   ProjectWithMetrics,
+  VendorDuesReportRow,
 } from '~/types'
 
 export interface ProjectDetail {
@@ -63,6 +64,7 @@ export function useRepositories() {
       monthly: () => api.get<MonthlyReportRow[]>('reports/monthly'),
       projectProfit: () => api.get<ProjectProfitReportRow[]>('reports/project-profit'),
       clientRevenue: () => api.get<ClientRevenueReportRow[]>('reports/client-revenue'),
+      vendorDues: () => api.get<VendorDuesReportRow[]>('reports/vendor-dues'),
     },
   }
 }

@@ -23,6 +23,7 @@ import {
   buildClientRevenueReport,
   buildMonthlyReport,
   buildProjectProfitReport,
+  buildVendorDuesReport,
 } from '~/utils/reports'
 import { genId, loadDB, persist } from './mockData'
 
@@ -101,6 +102,8 @@ export async function mockApi<T>(
         return delay(
           ok(buildClientRevenueReport(db.projects, db.clients, db.payments, db.expenses) as T),
         )
+      case 'reports/vendor-dues':
+        return delay(ok(buildVendorDuesReport(db.expenses) as T))
       default:
         return delay(fail<T>(`Unknown GET route: ${path}`))
     }
@@ -144,8 +147,9 @@ export async function mockApi<T>(
     case 'expense': {
       const p = body as NewExpense
       if (!p?.project_id) return delay(fail<T>('A project is required'))
-      if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
-      const row = { ...p, id: genId('e'), created_at: new Date().toISOString() }
+      if (!(p.total_bill > 0)) return delay(fail<T>('Total bill must be greater than 0'))
+      const paid = Math.min(Math.max(0, p.paid || 0), p.total_bill)
+      const row = { ...p, paid, id: genId('e'), created_at: new Date().toISOString() }
       db.expenses.push(row)
       persist()
       return delay(ok(row as T))

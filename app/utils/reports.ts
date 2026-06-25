@@ -7,8 +7,9 @@ import type {
   Payment,
   Project,
   ProjectProfitReportRow,
+  VendorDuesReportRow,
 } from '~/types'
-import { monthlyTrend, projectsWithMetrics, round2 } from './calculations'
+import { monthlyTrend, num, projectsWithMetrics, round2 } from './calculations'
 
 export function buildMonthlyReport(
   payments: Payment[],
@@ -65,4 +66,26 @@ export function buildClientRevenueReport(
       projectCount: countByClient.get(c.id) ?? 0,
     }))
     .sort((a, b) => b.revenue - a.revenue)
+}
+
+/** "Kar koto baki" — outstanding payables grouped by vendor (who we owe). */
+export function buildVendorDuesReport(expenses: Expense[]): VendorDuesReportRow[] {
+  const byVendor = new Map<string, { bill: number; paid: number; count: number }>()
+  for (const e of expenses) {
+    const vendor = (e.vendor && String(e.vendor).trim()) || (e.category && String(e.category).trim()) || 'Unknown'
+    const agg = byVendor.get(vendor) ?? { bill: 0, paid: 0, count: 0 }
+    agg.bill += num(e.total_bill)
+    agg.paid += num(e.paid)
+    agg.count += 1
+    byVendor.set(vendor, agg)
+  }
+  return [...byVendor.entries()]
+    .map(([vendor, a]) => ({
+      vendor,
+      totalBill: round2(a.bill),
+      paid: round2(a.paid),
+      due: round2(Math.max(0, a.bill - a.paid)),
+      billCount: a.count,
+    }))
+    .sort((a, b) => b.due - a.due)
 }

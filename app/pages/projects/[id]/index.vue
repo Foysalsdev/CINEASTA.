@@ -100,12 +100,20 @@ const summary = computed(() => {
           <p v-else class="py-6 text-center text-sm text-gray-400">No payments recorded.</p>
         </SectionCard>
 
-        <!-- Expenses -->
-        <SectionCard v-else title="Expenses" :subtitle="`${detail.expenses.length} entries`">
+        <!-- Expenses (bills) -->
+        <SectionCard v-else title="Expenses" :subtitle="`Cost ${currency(m.totalExpense)} · Due ${currency(m.expenseDue)}`">
           <ul v-if="detail.expenses.length" class="divide-y divide-gray-100">
-            <li v-for="e in detail.expenses" :key="e.id" class="flex items-center justify-between py-2.5">
-              <div><p class="text-sm font-medium text-gray-800">{{ e.category }}</p><p class="text-xs text-gray-400">{{ date(e.expense_date) }}<span v-if="e.notes"> · {{ e.notes }}</span></p></div>
-              <span class="text-sm font-semibold text-red-600">-{{ currency(e.amount) }}</span>
+            <li v-for="e in detail.expenses" :key="e.id" class="flex items-center justify-between gap-2 py-2.5">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-gray-800">{{ e.vendor || e.category }}</p>
+                <p class="truncate text-xs text-gray-400">{{ e.category }} · {{ date(e.expense_date) }}</p>
+              </div>
+              <div class="shrink-0 text-right">
+                <p class="text-sm font-semibold text-gray-800">{{ currency(e.total_bill) }}</p>
+                <p class="text-[11px]" :class="Math.max(0, e.total_bill - e.paid) > 0 ? 'text-amber-600' : 'text-brand-600'">
+                  {{ Math.max(0, e.total_bill - e.paid) > 0 ? `Due ${currency(e.total_bill - e.paid)}` : 'Paid' }}
+                </p>
+              </div>
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No expenses recorded.</p>

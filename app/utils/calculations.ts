@@ -72,9 +72,19 @@ export function totalReceived(payments: Payment[]): number {
   return sumBy(payments, (p) => p.amount)
 }
 
-/** Total Expense = Sum(Expenses) for the project. */
+/** Total Expense (cost) = Sum of the full bill across the project's expenses. */
 export function totalExpense(expenses: Expense[]): number {
-  return sumBy(expenses, (e) => e.amount)
+  return sumBy(expenses, (e) => e.total_bill)
+}
+
+/** Total already paid to vendors. */
+export function totalExpensePaid(expenses: Expense[]): number {
+  return sumBy(expenses, (e) => e.paid)
+}
+
+/** Payable due = Sum of (total_bill − paid), never negative per bill. */
+export function totalExpenseDue(expenses: Expense[]): number {
+  return sumBy(expenses, (e) => Math.max(0, num(e.total_bill) - num(e.paid)))
 }
 
 /** Outstanding Due = Contract Value - Total Received (never negative). */
@@ -114,6 +124,8 @@ export function computeProjectMetrics(
   return {
     totalReceived: received,
     totalExpense: expense,
+    expensePaid: totalExpensePaid(expenses),
+    expenseDue: totalExpenseDue(expenses),
     outstandingDue: outstandingDue(project.contract_value, received),
     currentProfit: profit,
     expectedProfit: expectedProfit(project.contract_value, expense),
@@ -184,6 +196,7 @@ export function computeDashboardKpis(
     totalExpense: totalExp,
     netProfit,
     outstandingDue: outstanding,
+    payableDue: totalExpenseDue(expenses),
     collectionRate: round2(safeDivide(totalRevenue, totalContract) * 100),
     averageProjectProfit: round2(safeDivide(totalProjectProfit, projects.length)),
     projectCount: projects.length,
@@ -209,7 +222,7 @@ export function monthlyTrend(
   }
   for (const e of expenses) {
     const key = monthKey(e.expense_date)
-    if (key) expenseByMonth.set(key, (expenseByMonth.get(key) ?? 0) + num(e.amount))
+    if (key) expenseByMonth.set(key, (expenseByMonth.get(key) ?? 0) + num(e.total_bill))
   }
 
   // Build a continuous window ending at the current month so the chart never
@@ -237,7 +250,7 @@ export function expenseBreakdown(expenses: Expense[]): CategoryBreakdownPoint[] 
   for (const e of expenses) {
     // Free-form categories: group by whatever was entered, blanks → Uncategorized.
     const cat = (e.category && String(e.category).trim()) || 'Uncategorized'
-    totals.set(cat, (totals.get(cat) ?? 0) + num(e.amount))
+    totals.set(cat, (totals.get(cat) ?? 0) + num(e.total_bill))
   }
   const grandTotal = round2([...totals.values()].reduce((a, b) => a + b, 0))
 

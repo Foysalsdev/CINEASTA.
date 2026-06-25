@@ -12,7 +12,7 @@ import type {
   ProjectStatus,
 } from '~/types'
 
-const STORAGE_KEY = 'cineasta:mockdb:v2'
+const STORAGE_KEY = 'cineasta:mockdb:v3'
 
 export interface MockDB {
   clients: Client[]
@@ -56,20 +56,28 @@ function seed(): MockDB {
     pay('pay7', 'p5', 40000, 'nagad', 30),
   ]
 
-  const exp = (id: string, project_id: string, category: ExpenseCategory, amount: number, daysAgo: number): Expense => ({
-    id, project_id, category, amount, expense_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
+  const exp = (
+    id: string,
+    project_id: string,
+    category: ExpenseCategory,
+    vendor: string,
+    total_bill: number,
+    paid: number,
+    daysAgo: number,
+  ): Expense => ({
+    id, project_id, category, vendor, total_bill, paid, expense_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
   })
   const expenses: Expense[] = [
-    exp('e1', 'p1', 'DOP & Camera Unit', 80000, 130),
-    exp('e2', 'p1', 'Light & Gear', 42000, 120),
-    exp('e3', 'p1', 'Transportation', 19000, 55),
-    exp('e4', 'p2', 'Directorial Team', 40000, 72),
-    exp('e5', 'p3', 'Artist & Casting', 60000, 100),
-    exp('e6', 'p3', 'Catering & Meal', 28000, 96),
-    exp('e7', 'p4', 'Location & Studio Rental', 35000, 48),
-    exp('e8', 'p4', 'Post Production', 25000, 20),
-    exp('e9', 'p5', 'Prop & Wardrobe', 17000, 25),
-    exp('e10', 'p5', 'Generator & Fuel', 9000, 10),
+    exp('e1', 'p1', 'DOP & Camera Unit', 'Lenscraft Rentals', 80000, 80000, 130),
+    exp('e2', 'p1', 'Light & Gear', 'Spotlight House', 42000, 30000, 120),
+    exp('e3', 'p1', 'Transportation', 'Rahim Travels', 19000, 19000, 55),
+    exp('e4', 'p2', 'Directorial Team', 'Karim (Director)', 40000, 40000, 72),
+    exp('e5', 'p3', 'Artist & Casting', 'StarCast Agency', 60000, 45000, 100),
+    exp('e6', 'p3', 'Catering & Meal', 'Tasty Caterers', 28000, 28000, 96),
+    exp('e7', 'p4', 'Location & Studio Rental', 'Skyline Studio', 35000, 20000, 48),
+    exp('e8', 'p4', 'Post Production', 'CutRoom Edits', 25000, 0, 20),
+    exp('e9', 'p5', 'Prop & Wardrobe', 'Stage Props BD', 17000, 10000, 25),
+    exp('e10', 'p5', 'Generator & Fuel', 'PowerGen', 9000, 9000, 10),
   ]
 
   return { clients, projects, payments, expenses }

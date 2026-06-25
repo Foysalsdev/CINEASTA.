@@ -54,11 +54,14 @@ export interface Payment {
 }
 
 // --- Sheet: Expenses -------------------------------------------------------
+// An expense is a vendor BILL we track against: total_bill vs paid → due.
 export interface Expense {
   id: ID
   project_id: ID
   category: ExpenseCategory
-  amount: number
+  vendor: string // who the bill is paid to ("kar") — e.g. a crew, house, person
+  total_bill: number
+  paid: number
   expense_date: string
   notes: string
   created_at: string
@@ -70,8 +73,10 @@ export interface Expense {
 
 export interface ProjectMetrics {
   totalReceived: number
-  totalExpense: number
-  outstandingDue: number
+  totalExpense: number // total cost = Σ total_bill
+  expensePaid: number // Σ paid to vendors
+  expenseDue: number // payable due = Σ (total_bill − paid)
+  outstandingDue: number // receivable due from client
   currentProfit: number
   expectedProfit: number
   profitMargin: number // percentage
@@ -87,7 +92,8 @@ export interface DashboardKpis {
   totalRevenue: number
   totalExpense: number
   netProfit: number
-  outstandingDue: number
+  outstandingDue: number // receivable (clients owe us)
+  payableDue: number // payable (we owe vendors) — total "baki"
   collectionRate: number // percentage
   averageProjectProfit: number
   projectCount: number
@@ -157,6 +163,15 @@ export interface ClientRevenueReportRow {
   client: string
   revenue: number
   projectCount: number
+}
+
+// "Kar koto baki" — outstanding payables grouped by vendor.
+export interface VendorDuesReportRow {
+  vendor: string
+  totalBill: number
+  paid: number
+  due: number
+  billCount: number
 }
 
 // =============================================================================

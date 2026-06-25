@@ -18,7 +18,7 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 | Clients  | `id, name, phone, email, notes, created_at`                                  |
 | Projects | `id, client_id, project_name, contract_value, start_date, status, created_at`|
 | Payments | `id, project_id, amount, payment_method, payment_date, notes, created_at`    |
-| Expenses | `id, project_id, category, amount, expense_date, notes, created_at`          |
+| Expenses | `id, project_id, category, vendor, total_bill, paid, expense_date, notes, created_at` |
 
 ## 2. Add the script
 
@@ -62,6 +62,7 @@ with built-in demo data — no backend required.
 | GET    | `reports/monthly`         | `MonthlyReportRow[]`                                |
 | GET    | `reports/project-profit`  | `ProjectProfitReportRow[]`                          |
 | GET    | `reports/client-revenue`  | `ClientRevenueReportRow[]`                          |
+| GET    | `reports/vendor-dues`     | `VendorDuesReportRow[]` — "kar koto baki" per vendor |
 | POST   | `client`                  | created `Client`                                    |
 | POST   | `project`                 | created `Project`                                   |
 | POST   | `payment`                 | created `Payment`                                   |

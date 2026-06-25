@@ -5,7 +5,8 @@ const { currency, percent } = useFormat()
 useHead({ title: 'Reports — CINEASTA' })
 await useAsyncData('reports', () => reports.fetchAll().then(() => true))
 
-const tab = ref<'monthly' | 'projects' | 'clients'>('monthly')
+const tab = ref<'monthly' | 'projects' | 'clients' | 'dues'>('monthly')
+const totalDue = computed(() => reports.vendorDues.reduce((a, r) => a + r.due, 0))
 const monthlyTotals = computed(() => ({
   revenue: reports.monthly.reduce((a, m) => a + m.revenue, 0),
   expense: reports.monthly.reduce((a, m) => a + m.expense, 0),
@@ -19,7 +20,7 @@ const monthlyTotals = computed(() => ({
 
     <div class="flex rounded-xl bg-gray-100 p-1 text-sm font-medium">
       <button
-        v-for="t in (['monthly', 'projects', 'clients'] as const)"
+        v-for="t in (['monthly', 'projects', 'clients', 'dues'] as const)"
         :key="t"
         class="flex-1 rounded-lg py-2.5 capitalize transition"
         :class="tab === t ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'"
@@ -87,7 +88,7 @@ const monthlyTotals = computed(() => ({
       </SectionCard>
 
       <!-- Client revenue report -->
-      <SectionCard v-else title="Client Revenue Report">
+      <SectionCard v-else-if="tab === 'clients'" title="Client Revenue Report">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -103,6 +104,31 @@ const monthlyTotals = computed(() => ({
                 <td class="py-2 px-2 text-right tabular-nums">{{ currency(r.revenue, { compact: true }) }}</td>
                 <td class="py-2 pl-2 text-right tabular-nums">{{ r.projectCount }}</td>
               </tr>
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <!-- Vendor dues — "kar koto baki" -->
+      <SectionCard v-else title="Vendor Dues" :subtitle="`Total payable: ${currency(totalDue)}`">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wide text-gray-400">
+                <th class="py-2 pr-2 font-medium">Vendor</th>
+                <th class="py-2 px-2 text-right font-medium">Bill</th>
+                <th class="py-2 px-2 text-right font-medium">Paid</th>
+                <th class="py-2 pl-2 text-right font-medium">Due</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="r in reports.vendorDues" :key="r.vendor">
+                <td class="max-w-[140px] truncate py-2 pr-2 font-medium text-gray-700">{{ r.vendor }}</td>
+                <td class="py-2 px-2 text-right tabular-nums">{{ currency(r.totalBill, { compact: true }) }}</td>
+                <td class="py-2 px-2 text-right tabular-nums text-gray-500">{{ currency(r.paid, { compact: true }) }}</td>
+                <td class="py-2 pl-2 text-right font-semibold tabular-nums" :class="r.due > 0 ? 'text-amber-600' : 'text-brand-600'">{{ currency(r.due, { compact: true }) }}</td>
+              </tr>
+              <tr v-if="!reports.vendorDues.length"><td colspan="4" class="py-4 text-center text-gray-400">No vendor bills yet.</td></tr>
             </tbody>
           </table>
         </div>
