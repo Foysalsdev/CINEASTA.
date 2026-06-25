@@ -22,7 +22,7 @@ onMounted(() => {
 
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive<NewExpense & { attachments: Attachment[] }>({
-  type: (props.defaultProjectId ? 'project' : 'project') as ExpenseType,
+  type: 'project' as ExpenseType,
   project_id: props.defaultProjectId ?? '',
   vendor_id: '',
   asset_id: '',
@@ -34,6 +34,9 @@ const form = reactive<NewExpense & { attachments: Attachment[] }>({
 })
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
+// Vendor tagging is opt-in so the default no-vendor flow stays a 3-field form
+// (category, amount, date) — most expenses aren't paid to a tracked vendor.
+const showVendorField = ref(false)
 
 const showProject = computed(() => form.type !== 'internal')
 const showAsset = computed(() => form.type === 'asset' || form.type === 'maintenance')
@@ -66,6 +69,7 @@ async function submit() {
     await expenses.add({
       ...form,
       project_id: showProject.value ? form.project_id : '',
+      vendor_id: showVendorField.value ? form.vendor_id : '',
       asset_id: showAsset.value ? form.asset_id : '',
       category: form.category.trim() || 'Uncategorized',
       amount: Number(form.amount) || 0,
@@ -112,9 +116,17 @@ async function submit() {
     </div>
 
     <div v-if="!regularOnly">
-      <label class="field-label">Vendor / Paid to</label>
-      <Combobox v-model="form.vendor_id" :options="vendorOptions" mode="select" placeholder="Pick a vendor (optional)…" />
-      <p class="mt-1 text-xs text-gray-400">Add vendors from Finance → Vendors.</p>
+      <button v-if="!showVendorField" type="button" class="text-sm font-medium text-brand-600" @click="showVendorField = true">
+        + Tag a vendor
+      </button>
+      <div v-else>
+        <div class="flex items-center justify-between">
+          <label class="field-label !mb-0">Vendor / Paid to</label>
+          <button type="button" class="text-xs text-gray-400" @click="showVendorField = false; form.vendor_id = ''">Remove</button>
+        </div>
+        <Combobox v-model="form.vendor_id" :options="vendorOptions" mode="select" placeholder="Pick a vendor…" class="mt-1" />
+        <p class="mt-1 text-xs text-gray-400">Add vendors from Finance → Vendors.</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-2 gap-3">
