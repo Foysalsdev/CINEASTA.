@@ -23,7 +23,7 @@ interface Row {
   amount: number | null
 }
 const rows = reactive<Row[]>([{ category: '', amount: null }, { category: '', amount: null }, { category: '', amount: null }])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 
 const projectOptions = computed(() => [
   { value: '', label: 'Internal / no project', hint: 'Office, overhead…' },
@@ -47,29 +47,28 @@ function removeRow(i: number) {
 }
 
 async function save() {
-  if (saving.value || !valid.value.length) return
-  saving.value = true
-  try {
-    for (const r of valid.value) {
-      await expenses.add({
-        type: projectId.value ? 'project' : 'internal',
-        project_id: projectId.value,
-        vendor_id: '',
-        asset_id: '',
-        category: r.category.trim() || 'Uncategorized',
-        amount: Number(r.amount) || 0,
-        expense_date: sharedDate.value,
-        notes: '',
-      })
+  if (!valid.value.length) return
+  await guard(async () => {
+    try {
+      for (const r of valid.value) {
+        await expenses.add({
+          type: projectId.value ? 'project' : 'internal',
+          project_id: projectId.value,
+          vendor_id: '',
+          asset_id: '',
+          category: r.category.trim() || 'Uncategorized',
+          amount: Number(r.amount) || 0,
+          expense_date: sharedDate.value,
+          notes: '',
+        })
+      }
+      ui.toast(`${valid.value.length} expense${valid.value.length > 1 ? 's' : ''} added`)
+      await Promise.all([dashboard.fetch(true), projects.fetch(true)])
+      emit('done')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
     }
-    ui.toast(`${valid.value.length} expense${valid.value.length > 1 ? 's' : ''} added`)
-    await Promise.all([dashboard.fetch(true), projects.fetch(true)])
-    emit('done')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 

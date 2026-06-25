@@ -19,24 +19,23 @@ const payFor = ref<ProjectVendorLine | null>(null)
 // Edit Total Bill
 const editFor = ref<ProjectVendorLine | null>(null)
 const editTotal = ref<number>(0)
-const savingTotal = ref(false)
+const { saving: savingTotal, guard: guardTotal } = useSavingGuard()
 function openEdit(line: ProjectVendorLine) {
   editFor.value = line
   editTotal.value = line.totalBill
 }
 async function saveTotal() {
-  if (!editFor.value || savingTotal.value) return
-  savingTotal.value = true
-  try {
-    await repo.expenses.update(editFor.value.primaryBillId, { amount: Number(editTotal.value) || 0 })
-    ui.toast('Total bill updated')
-    editFor.value = null
-    emit('changed')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to update', 'error')
-  } finally {
-    savingTotal.value = false
-  }
+  if (!editFor.value) return
+  await guardTotal(async () => {
+    try {
+      await repo.expenses.update(editFor.value!.primaryBillId, { amount: Number(editTotal.value) || 0 })
+      ui.toast('Total bill updated')
+      editFor.value = null
+      emit('changed')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to update', 'error')
+    }
+  })
 }
 
 function onSaved() {
@@ -137,7 +136,7 @@ const existingVendorIds = computed(() => props.lines.map((l) => l.vendor.id))
           <input v-model.number="editTotal" type="number" min="0" step="0.01" class="field-input" inputmode="decimal" />
         </div>
         <div class="flex gap-2 pt-1">
-          <button type="button" class="btn-ghost flex-1" @click="editFor = null">Cancel</button>
+          <button type="button" class="btn-ghost flex-1" :disabled="savingTotal" @click="editFor = null">Cancel</button>
           <button type="submit" class="btn-primary flex-1" :disabled="savingTotal">{{ savingTotal ? 'Saving…' : 'Save' }}</button>
         </div>
       </form>

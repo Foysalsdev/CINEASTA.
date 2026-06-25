@@ -14,7 +14,7 @@ const method = ref<PaymentMethod>('bank')
 const payDate = ref(today)
 const notes = ref('')
 const attachments = ref<Attachment[]>([])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const error = ref('')
 
 // Outstanding bills only; allocation prefilled with each bill's due.
@@ -29,7 +29,6 @@ const totalAllocated = computed(() =>
 )
 
 async function submit() {
-  if (saving.value) return
   const list: NewVendorPayment[] = outstanding.value
     .filter((b) => (Number(alloc[b.id]) || 0) > 0)
     .map((b) => ({
@@ -45,16 +44,15 @@ async function submit() {
     error.value = 'Allocate an amount to at least one bill'
     return
   }
-  saving.value = true
-  try {
-    await vendors.payBills(list)
-    ui.toast('Vendor payment recorded')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  await guard(async () => {
+    try {
+      await vendors.payBills(list)
+      ui.toast('Vendor payment recorded')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -105,7 +103,7 @@ async function submit() {
     </template>
 
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving || !outstanding.length">
         {{ saving ? 'Saving…' : 'Pay vendor' }}
       </button>

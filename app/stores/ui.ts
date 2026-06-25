@@ -21,7 +21,14 @@ export const useUiStore = defineStore('ui', {
     toasts: [] as Toast[],
     quickAdd: null as QuickAddView,
     _seq: 0,
+    // Counter, not a bool — guards against overlapping saves (e.g. a nested
+    // "+ New vendor" modal) so a busy flag from one doesn't get cleared by
+    // the other finishing first.
+    busyCount: 0,
   }),
+  getters: {
+    busy: (state) => state.busyCount > 0,
+  },
   actions: {
     toast(message: string, type: ToastType = 'success') {
       const id = ++this._seq
@@ -36,6 +43,14 @@ export const useUiStore = defineStore('ui', {
     },
     closeQuickAdd() {
       this.quickAdd = null
+    },
+    // While busy, AppModal ignores backdrop/Escape/swipe dismissal — a save
+    // in flight can't be abandoned and silently resubmitted.
+    beginBusy() {
+      this.busyCount++
+    },
+    endBusy() {
+      this.busyCount = Math.max(0, this.busyCount - 1)
     },
   },
 })

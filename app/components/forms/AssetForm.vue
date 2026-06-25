@@ -6,24 +6,23 @@ const assets = useAssetsStore()
 const ui = useUiStore()
 const today = new Date().toISOString().slice(0, 10)
 const form = reactive<NewAsset>({ name: '', category: '', purchase_value: 0, purchase_date: today, notes: '' })
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const error = ref('')
 
 async function submit() {
-  if (!form.name.trim() || saving.value) {
-    error.value = form.name.trim() ? '' : 'Asset name is required'
+  if (!form.name.trim()) {
+    error.value = 'Asset name is required'
     return
   }
-  saving.value = true
-  try {
-    await assets.add({ ...form, purchase_value: Number(form.purchase_value) || 0 })
-    ui.toast('Asset added')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  await guard(async () => {
+    try {
+      await assets.add({ ...form, purchase_value: Number(form.purchase_value) || 0 })
+      ui.toast('Asset added')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -53,7 +52,7 @@ async function submit() {
       <input v-model="form.notes" class="field-input" placeholder="Optional" />
     </div>
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">{{ saving ? 'Saving…' : 'Add asset' }}</button>
     </div>
   </form>

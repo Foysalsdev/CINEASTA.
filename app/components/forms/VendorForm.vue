@@ -14,26 +14,25 @@ const form = reactive<NewVendor>({
   email: '',
   notes: '',
 })
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const error = ref('')
 
 const categoryOptions = VENDOR_CATEGORIES.map((c) => ({ value: c, label: c }))
 
 async function submit() {
-  if (!form.name.trim() || saving.value) {
-    error.value = form.name.trim() ? '' : 'Vendor name is required'
+  if (!form.name.trim()) {
+    error.value = 'Vendor name is required'
     return
   }
-  saving.value = true
-  try {
-    const v = await vendors.add({ ...form })
-    ui.toast('Vendor added')
-    emit('saved', v.id)
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  await guard(async () => {
+    try {
+      const v = await vendors.add({ ...form })
+      ui.toast('Vendor added')
+      emit('saved', v.id)
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -63,7 +62,7 @@ async function submit() {
       <textarea v-model="form.notes" rows="2" class="field-input" placeholder="Optional" />
     </div>
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">{{ saving ? 'Saving…' : 'Add vendor' }}</button>
     </div>
   </form>

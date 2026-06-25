@@ -15,34 +15,32 @@ const method = ref<PaymentMethod>('bank')
 const payDate = ref(today)
 const notes = ref('')
 const attachments = ref<Attachment[]>([])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const error = ref('')
 
 async function submit() {
-  if (saving.value) return
   if (!(Number(amount.value) > 0)) {
     error.value = 'Amount must be greater than 0'
     return
   }
   error.value = ''
-  saving.value = true
-  try {
-    await vendors.pay({
-      vendor_id: props.vendorId,
-      bill_id: props.billId,
-      amount: Number(amount.value),
-      payment_method: method.value,
-      payment_date: payDate.value,
-      notes: notes.value,
-      attachments: attachments.value,
-    })
-    ui.toast('Payment recorded')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  await guard(async () => {
+    try {
+      await vendors.pay({
+        vendor_id: props.vendorId,
+        bill_id: props.billId,
+        amount: Number(amount.value),
+        payment_method: method.value,
+        payment_date: payDate.value,
+        notes: notes.value,
+        attachments: attachments.value,
+      })
+      ui.toast('Payment recorded')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -75,7 +73,7 @@ async function submit() {
     <AttachmentInput v-model="attachments" />
     <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">{{ saving ? 'Saving…' : 'Record payment' }}</button>
     </div>
   </form>

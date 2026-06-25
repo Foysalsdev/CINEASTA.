@@ -51,15 +51,6 @@ function onDone() {
     <BulkExpenses v-if="mode === 'expenses'" :key="`e${formKey}`" @done="onDone" />
     <BulkPayments v-else-if="mode === 'payments'" :key="`p${formKey}`" @done="onDone" />
     <BulkVendorPayments v-else-if="mode === 'vendor'" :key="`v${formKey}`" @done="onDone" />
-
-    <div v-else class="card flex flex-col items-center gap-3 p-10 text-center">
-      <div class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
-        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </div>
-      <p class="text-sm font-semibold text-gray-700">CSV Import — coming next</p>
-      <p class="max-w-xs text-sm text-gray-400">
-        For now use the multi-row tabs above to add many entries at once.
-      </p>
-    </div>
+    <BulkCsvImport v-else :key="`c${formKey}`" @done="onDone" />
   </div>
 </template>

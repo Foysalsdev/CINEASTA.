@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { PaymentMethod, VendorBillLine, VendorDetail } from '~/types'
+import type { PaymentMethod, VendorDetail } from '~/types'
 import { PAYMENT_METHODS } from '~/utils/constants'
-import { round2 } from '~/utils/calculations'
+import { allocatePayment, round2 } from '~/utils/calculations'
 
 const emit = defineEmits<{ done: [] }>()
 
@@ -23,7 +23,7 @@ interface Row {
   amount: number | null
 }
 const rows = reactive<Row[]>([{ vendorId: '', amount: null }, { vendorId: '', amount: null }])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 
 // Lazy cache of each vendor's bills/due so we can allocate oldest-first.
 const detailCache = reactive<Record<string, VendorDetail>>({})
@@ -64,53 +64,39 @@ function removeRow(i: number) {
   if (!rows.length) addRow()
 }
 
-// Spread a lump sum across a vendor's outstanding bills, oldest first.
-// Any remainder beyond the total due is recorded as an unallocated advance.
-function allocate(bills: VendorBillLine[], amount: number): { bill_id: string; amount: number }[] {
-  const sorted = bills
-    .filter((b) => b.due > 0)
-    .sort((a, b) => new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime())
-  const out: { bill_id: string; amount: number }[] = []
-  let rem = amount
-  for (const b of sorted) {
-    if (rem <= 0.001) break
-    const a = Math.min(rem, b.due)
-    out.push({ bill_id: b.id, amount: round2(a) })
-    rem = round2(rem - a)
-  }
-  if (rem > 0.001) out.push({ bill_id: '', amount: round2(rem) })
-  return out
-}
-
 async function save() {
-  if (saving.value || !valid.value.length) return
-  saving.value = true
-  try {
-    let count = 0
-    for (const r of valid.value) {
-      const detail = detailCache[r.vendorId] ?? (await repo.vendors.get(r.vendorId))
-      detailCache[r.vendorId] = detail
-      const allocations = allocate(detail.bills, Number(r.amount) || 0)
-      for (const a of allocations) {
-        await repo.vendors.pay({
-          vendor_id: r.vendorId,
-          bill_id: a.bill_id,
-          amount: a.amount,
-          payment_method: method.value,
-          payment_date: sharedDate.value,
-          notes: '',
-        })
+  if (!valid.value.length) return
+  await guard(async () => {
+    try {
+      let count = 0
+      for (const r of valid.value) {
+        const detail = detailCache[r.vendorId] ?? (await repo.vendors.get(r.vendorId))
+        detailCache[r.vendorId] = detail
+        const allocations = allocatePayment(detail.bills, Number(r.amount) || 0)
+        for (const a of allocations) {
+          await repo.vendors.pay({
+            vendor_id: r.vendorId,
+            bill_id: a.bill_id,
+            amount: a.amount,
+            payment_method: method.value,
+            payment_date: sharedDate.value,
+            notes: '',
+          })
+          // Keep the cached due amounts in sync so a vendor appearing in a
+          // later row of the same batch allocates against what's left, not
+          // the pre-batch due.
+          const bill = detail.bills.find((b) => b.id === a.bill_id)
+          if (bill) bill.due = round2(Math.max(0, bill.due - a.amount))
+        }
+        count++
       }
-      count++
+      ui.toast(`Paid ${count} vendor${count > 1 ? 's' : ''}`)
+      await Promise.all([dashboard.fetch(true), projects.fetch(true), vendors.fetch(true)])
+      emit('done')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
     }
-    ui.toast(`Paid ${count} vendor${count > 1 ? 's' : ''}`)
-    await Promise.all([dashboard.fetch(true), projects.fetch(true), vendors.fetch(true)])
-    emit('done')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 
