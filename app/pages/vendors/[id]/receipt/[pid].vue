@@ -8,8 +8,12 @@ const pid = computed(() => String(route.params.pid))
 const vendors = useVendorsStore()
 const projects = useProjectsStore()
 
-await useAsyncData(`receipt-${id.value}-${pid.value}`, () =>
-  Promise.all([vendors.fetchOne(id.value), projects.fetch()]).then(() => true),
+// Always pull live data so the printed receipt reflects the latest figures,
+// never a cached snapshot from an earlier visit.
+await useAsyncData(
+  `receipt-${id.value}-${pid.value}`,
+  () => Promise.all([vendors.fetchOne(id.value), projects.fetch(true)]).then(() => true),
+  { getCachedData: () => undefined },
 )
 
 const detail = computed(() => vendors.current)
