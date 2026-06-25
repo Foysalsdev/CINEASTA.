@@ -50,6 +50,9 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-title', content: 'CINEASTA' },
       ],
       link: [
+        // Explicit manifest link so the PWA is discoverable/installable even
+        // in SPA mode (the module doesn't inject it into the static shell).
+        { rel: 'manifest', href: '/manifest.webmanifest' },
         { rel: 'icon', type: 'image/png', href: '/icons/icon-192.png' },
         { rel: 'apple-touch-icon', href: '/icons/icon-192.png' },
       ],
