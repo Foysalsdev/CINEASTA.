@@ -26,7 +26,6 @@ async function submit() {
     <div class="w-full max-w-sm">
       <div class="mb-8 flex flex-col items-center text-center">
         <BrandMark :size="104" />
-        <p class="mt-3 text-sm text-gray-400">Agency Profit Tracker</p>
       </div>
 
       <div class="card p-6">

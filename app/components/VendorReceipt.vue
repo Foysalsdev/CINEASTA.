@@ -26,7 +26,6 @@ const hasBill = computed(() => (props.billTotal ?? 0) > 0)
     <header class="print-keep flex items-start justify-between border-b-2 border-brand-600 pb-5">
       <div>
         <p class="text-2xl font-extrabold leading-none tracking-tight text-brand-700">CINEASTA<span class="text-brand-500">.</span></p>
-        <p class="mt-1.5 text-xs text-gray-400">Agency Profit Tracker</p>
       </div>
       <div class="text-right">
         <p class="text-lg font-bold">Payment Voucher</p>
@@ -90,7 +89,7 @@ const hasBill = computed(() => (props.billTotal ?? 0) > 0)
     </section>
 
     <footer class="mt-8 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-      System-generated voucher from CINEASTA. Agency Profit Tracker · {{ generatedOn }}
+      System-generated voucher from CINEASTA. · {{ generatedOn }}
     </footer>
   </article>
 </template>
