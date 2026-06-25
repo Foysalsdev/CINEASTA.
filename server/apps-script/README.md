@@ -17,10 +17,10 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 | -------------- | ---------------------------------------------------------------------------- |
 | Clients        | `id, name, phone, email, notes, created_at`                                  |
 | Projects       | `id, client_id, project_name, contract_value, start_date, status, created_at`|
-| Payments       | `id, project_id, amount, payment_method, payment_date, notes, created_at`    |
-| Expenses       | `id, type, project_id, vendor_id, asset_id, category, amount, expense_date, notes, created_at` |
+| Payments       | `id, project_id, amount, payment_method, payment_date, notes, attachments, created_at` |
+| Expenses       | `id, type, project_id, vendor_id, asset_id, category, amount, expense_date, notes, attachments, created_at` |
 | Vendors        | `id, name, phone, email, notes, created_at`                                  |
-| VendorPayments | `id, vendor_id, bill_id, amount, payment_method, payment_date, notes, created_at` |
+| VendorPayments | `id, vendor_id, bill_id, amount, payment_method, payment_date, notes, attachments, created_at` |
 | Assets         | `id, name, category, purchase_value, purchase_date, notes, created_at`       |
 
 `Expenses.type` is one of `project · internal · asset · maintenance` (single
@@ -34,6 +34,10 @@ expense system). `vendor_id` / `asset_id` are optional links.
    and `SCRIPT_PASSWORD` to the passcode the owner types on the login screen.
    On correct passcode the backend returns `SCRIPT_TOKEN`, so the real password
    never ships inside the frontend bundle.
+4. (Optional) set `DRIVE_FOLDER_ID` to a Drive folder for receipts/attachments.
+   If left blank, a folder named **CINEASTA Receipts** is created automatically.
+   Uploaded files are shared as "anyone with the link can view" so they open
+   from the app. Authorise the Drive scope on first `upload`.
 4. Run `setupSheets()` once (authorize when prompted) to create the tabs.
 
 ## 3. Deploy as a Web App
@@ -59,6 +63,7 @@ with built-in demo data — no backend required.
 | Method | `path`                    | Returns                                            |
 | ------ | ------------------------- | -------------------------------------------------- |
 | POST   | `login`                   | `{ token }` if the passcode matches `SCRIPT_PASSWORD` (token-exempt route) |
+| POST   | `upload`                  | `{ id, name, url }` — saves a base64 file to Drive (receipts/attachments) |
 | GET    | `dashboard`               | KPIs, monthly trend, breakdown, rankings, recent   |
 | GET    | `clients`                 | `Client[]`                                          |
 | GET    | `projects`                | `ProjectWithMetrics[]`                              |

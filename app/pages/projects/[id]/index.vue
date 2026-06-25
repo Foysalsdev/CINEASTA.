@@ -92,9 +92,12 @@ const summary = computed(() => {
         <!-- Payments -->
         <SectionCard v-else-if="tab === 'payments'" :title="`Payments (${detail.payments.length})`">
           <ul v-if="detail.payments.length" class="divide-y divide-gray-100">
-            <li v-for="p in detail.payments" :key="p.id" class="flex items-center justify-between py-2.5">
-              <div><p class="text-sm font-medium text-gray-800">{{ date(p.payment_date) }}</p><p class="text-xs text-gray-400 capitalize">{{ p.payment_method }}<span v-if="p.notes"> · {{ p.notes }}</span></p></div>
-              <span class="text-sm font-semibold text-brand-600">+{{ currency(p.amount) }}</span>
+            <li v-for="p in detail.payments" :key="p.id" class="py-2.5">
+              <div class="flex items-center justify-between">
+                <div><p class="text-sm font-medium text-gray-800">{{ date(p.payment_date) }}</p><p class="text-xs text-gray-400 capitalize">{{ p.payment_method }}<span v-if="p.notes"> · {{ p.notes }}</span></p></div>
+                <span class="text-sm font-semibold text-brand-600">+{{ currency(p.amount) }}</span>
+              </div>
+              <AttachmentChips :items="p.attachments" />
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No payments recorded.</p>
@@ -103,12 +106,15 @@ const summary = computed(() => {
         <!-- Expenses -->
         <SectionCard v-else title="Expenses" :subtitle="`Cost ${currency(m.totalExpense)}`">
           <ul v-if="detail.expenses.length" class="divide-y divide-gray-100">
-            <li v-for="e in detail.expenses" :key="e.id" class="flex items-center justify-between gap-2 py-2.5">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-gray-800">{{ e.category }}</p>
-                <p class="truncate text-xs text-gray-400 capitalize">{{ e.type }} · {{ date(e.expense_date) }}</p>
+            <li v-for="e in detail.expenses" :key="e.id" class="py-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-gray-800">{{ e.category }}</p>
+                  <p class="truncate text-xs text-gray-400 capitalize">{{ e.type }} · {{ date(e.expense_date) }}</p>
+                </div>
+                <span class="shrink-0 text-sm font-semibold text-red-600">-{{ currency(e.amount) }}</span>
               </div>
-              <span class="shrink-0 text-sm font-semibold text-red-600">-{{ currency(e.amount) }}</span>
+              <AttachmentChips :items="e.attachments" />
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No expenses recorded.</p>

@@ -63,17 +63,20 @@ async function onPaid() {
 
         <SectionCard v-else-if="tab === 'bills'" :title="`Bills (${detail.bills.length})`">
           <ul v-if="detail.bills.length" class="divide-y divide-gray-100">
-            <li v-for="b in detail.bills" :key="b.id" class="flex items-center justify-between gap-2 py-2.5">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-gray-800">{{ b.category }}</p>
-                <p class="text-xs text-gray-400">{{ EXPENSE_TYPE_LABEL[b.type] }} · {{ date(b.expense_date) }}</p>
+            <li v-for="b in detail.bills" :key="b.id" class="py-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-gray-800">{{ b.category }}</p>
+                  <p class="text-xs text-gray-400">{{ EXPENSE_TYPE_LABEL[b.type] }} · {{ date(b.expense_date) }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <p class="text-sm font-semibold text-gray-800">{{ currency(b.amount) }}</p>
+                  <p class="text-[11px]" :class="b.due > 0 ? 'text-amber-600' : 'text-brand-600'">
+                    {{ b.due > 0 ? `Due ${currency(b.due)}` : 'Paid' }}
+                  </p>
+                </div>
               </div>
-              <div class="shrink-0 text-right">
-                <p class="text-sm font-semibold text-gray-800">{{ currency(b.amount) }}</p>
-                <p class="text-[11px]" :class="b.due > 0 ? 'text-amber-600' : 'text-brand-600'">
-                  {{ b.due > 0 ? `Due ${currency(b.due)}` : 'Paid' }}
-                </p>
-              </div>
+              <AttachmentChips :items="b.attachments" />
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No bills from this vendor.</p>
@@ -81,9 +84,12 @@ async function onPaid() {
 
         <SectionCard v-else :title="`Payments (${detail.payments.length})`">
           <ul v-if="detail.payments.length" class="divide-y divide-gray-100">
-            <li v-for="p in detail.payments" :key="p.id" class="flex items-center justify-between py-2.5">
-              <div><p class="text-sm font-medium text-gray-800">{{ date(p.payment_date) }}</p><p class="text-xs text-gray-400 capitalize">{{ p.payment_method }}<span v-if="p.notes"> · {{ p.notes }}</span></p></div>
-              <span class="text-sm font-semibold text-brand-600">{{ currency(p.amount) }}</span>
+            <li v-for="p in detail.payments" :key="p.id" class="py-2.5">
+              <div class="flex items-center justify-between">
+                <div><p class="text-sm font-medium text-gray-800">{{ date(p.payment_date) }}</p><p class="text-xs text-gray-400 capitalize">{{ p.payment_method }}<span v-if="p.notes"> · {{ p.notes }}</span></p></div>
+                <span class="text-sm font-semibold text-brand-600">{{ currency(p.amount) }}</span>
+              </div>
+              <AttachmentChips :items="p.attachments" />
             </li>
           </ul>
           <p v-else class="py-6 text-center text-sm text-gray-400">No payments yet.</p>

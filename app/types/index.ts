@@ -4,6 +4,16 @@
 
 export type ID = string
 
+// A receipt / file attached to a financial transaction. In live mode `url`
+// points at Google Drive; in demo mode it's a local data URL.
+export interface Attachment {
+  id: ID
+  name: string
+  url: string
+  mime: string
+  size: number
+}
+
 export type ProjectStatus = 'active' | 'completed' | 'on_hold' | 'cancelled'
 
 export type PaymentMethod =
@@ -50,6 +60,7 @@ export interface Payment {
   payment_method: PaymentMethod
   payment_date: string
   notes: string
+  attachments?: Attachment[]
   created_at: string
 }
 
@@ -67,6 +78,7 @@ export interface Expense {
   amount: number
   expense_date: string
   notes: string
+  attachments?: Attachment[]
   created_at: string
 }
 
@@ -89,6 +101,7 @@ export interface VendorPayment {
   payment_method: PaymentMethod
   payment_date: string
   notes: string
+  attachments?: Attachment[]
   created_at: string
 }
 

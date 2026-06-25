@@ -27,13 +27,17 @@ var SCRIPT_TOKEN = '';
 // real password never ships inside the frontend bundle. Leave '' to allow any.
 var SCRIPT_PASSWORD = '';
 
+// Google Drive folder for uploaded receipts/attachments. Leave '' to auto-use
+// (or create) a folder named "CINEASTA Receipts" in the script owner's Drive.
+var DRIVE_FOLDER_ID = '';
+
 var SHEETS = {
   Clients: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
   Projects: ['id', 'client_id', 'project_name', 'contract_value', 'start_date', 'status', 'created_at'],
-  Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
-  Expenses: ['id', 'type', 'project_id', 'vendor_id', 'asset_id', 'category', 'amount', 'expense_date', 'notes', 'created_at'],
+  Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'attachments', 'created_at'],
+  Expenses: ['id', 'type', 'project_id', 'vendor_id', 'asset_id', 'category', 'amount', 'expense_date', 'notes', 'attachments', 'created_at'],
   Vendors: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
-  VendorPayments: ['id', 'vendor_id', 'bill_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
+  VendorPayments: ['id', 'vendor_id', 'bill_id', 'amount', 'payment_method', 'payment_date', 'notes', 'attachments', 'created_at'],
   Assets: ['id', 'name', 'category', 'purchase_value', 'purchase_date', 'notes', 'created_at']
 };
 
@@ -93,6 +97,7 @@ function route(method, path, params, body) {
   }
   switch (path) {
     case 'login': return login(body);
+    case 'upload': return handleUpload(body);
     case 'client': return createClient(body);
     case 'project': return createProject(body);
     case 'payment': return createPayment(body);
@@ -127,6 +132,11 @@ function readAll(name) {
     var obj = {};
     for (var c = 0; c < headers.length; c++) obj[headers[c]] = values[r][c];
     if (obj.id === '' || obj.id === null || obj.id === undefined) continue;
+    // attachments is stored as a JSON string; expose it as an array.
+    if (obj.attachments !== undefined) {
+      try { obj.attachments = obj.attachments ? JSON.parse(obj.attachments) : []; }
+      catch (e) { obj.attachments = []; }
+    }
     rows.push(obj);
   }
   return rows;
@@ -134,7 +144,10 @@ function readAll(name) {
 
 function appendRow_(name, obj) {
   var sh = sheet_(name);
-  var row = SHEETS[name].map(function (key) { return obj[key] !== undefined ? obj[key] : ''; });
+  var row = SHEETS[name].map(function (key) {
+    if (key === 'attachments') return JSON.stringify(obj.attachments || []);
+    return obj[key] !== undefined ? obj[key] : '';
+  });
   sh.appendRow(row);
   return obj;
 }
@@ -432,6 +445,7 @@ function createPayment(body) {
     payment_method: body.payment_method || 'other',
     payment_date: body.payment_date || today_(),
     notes: body.notes || '',
+    attachments: body.attachments || [],
     created_at: nowIso_()
   };
   return appendRow_('Payments', row);
@@ -450,6 +464,7 @@ function createExpense(body) {
     amount: requirePositive_(body.amount, 'Amount'),
     expense_date: body.expense_date || today_(),
     notes: body.notes || '',
+    attachments: body.attachments || [],
     created_at: nowIso_()
   };
   return appendRow_('Expenses', row);
@@ -477,9 +492,28 @@ function createVendorPayment(body) {
     payment_method: body.payment_method || 'other',
     payment_date: body.payment_date || today_(),
     notes: body.notes || '',
+    attachments: body.attachments || [],
     created_at: nowIso_()
   };
   return appendRow_('VendorPayments', row);
+}
+
+// ---- Receipt upload → Google Drive ------------------------------------------
+
+function getReceiptsFolder_() {
+  if (DRIVE_FOLDER_ID) return DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  var name = 'CINEASTA Receipts';
+  var it = DriveApp.getFoldersByName(name);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+}
+
+function handleUpload(body) {
+  if (!body || !body.data) throw new Error('No file data');
+  var bytes = Utilities.base64Decode(body.data);
+  var blob = Utilities.newBlob(bytes, body.mime || 'application/octet-stream', body.name || 'receipt');
+  var file = getReceiptsFolder_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { id: file.getId(), name: file.getName(), url: file.getUrl() };
 }
 
 function createAsset(body) {

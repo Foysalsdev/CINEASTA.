@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NewVendorPayment, PaymentMethod, VendorBillLine } from '~/types'
+import type { Attachment, NewVendorPayment, PaymentMethod, VendorBillLine } from '~/types'
 import { PAYMENT_METHODS } from '~/utils/constants'
 
 const props = defineProps<{ vendorId: string; bills: VendorBillLine[] }>()
@@ -13,6 +13,7 @@ const today = new Date().toISOString().slice(0, 10)
 const method = ref<PaymentMethod>('bank')
 const payDate = ref(today)
 const notes = ref('')
+const attachments = ref<Attachment[]>([])
 const saving = ref(false)
 const error = ref('')
 
@@ -38,6 +39,7 @@ async function submit() {
       payment_method: method.value,
       payment_date: payDate.value,
       notes: notes.value,
+      attachments: attachments.value,
     }))
   if (!list.length) {
     error.value = 'Allocate an amount to at least one bill'
@@ -98,6 +100,7 @@ async function submit() {
         <label class="field-label">Notes</label>
         <input v-model="notes" class="field-input" placeholder="Optional" />
       </div>
+      <AttachmentInput v-model="attachments" />
       <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
     </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NewPayment, PaymentMethod } from '~/types'
+import type { Attachment, NewPayment, PaymentMethod } from '~/types'
 import { PAYMENT_METHODS } from '~/utils/constants'
 
 const props = defineProps<{ defaultProjectId?: string }>()
@@ -12,12 +12,13 @@ const ui = useUiStore()
 onMounted(() => projects.fetch())
 
 const today = new Date().toISOString().slice(0, 10)
-const form = reactive<NewPayment>({
+const form = reactive<NewPayment & { attachments: Attachment[] }>({
   project_id: props.defaultProjectId ?? '',
   amount: 0,
   payment_method: 'bank' as PaymentMethod,
   payment_date: today,
   notes: '',
+  attachments: [],
 })
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
@@ -75,6 +76,7 @@ async function submit() {
       <label class="field-label">Notes</label>
       <input v-model="form.notes" class="field-input" placeholder="Optional" />
     </div>
+    <AttachmentInput v-model="form.attachments" />
     <div class="flex gap-2 pt-1">
       <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">

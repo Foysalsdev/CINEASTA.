@@ -156,9 +156,11 @@ Apps Script API so the dashboard opens instantly and stays usable offline.
 
 - **Phase 1 (done):** 5-tab nav, Dashboard, Projects, Finance (Payments/Expenses/Vendors),
   single Expense system with types, vendor dues, Assets, Reports (incl. Dues), PWA, login.
-- **Phase 2 (next):** Attachments / receipts → Google Drive on every transaction;
-  Bulk Entry (Bulk Expenses / Payments / Vendor Payments) + CSV import; cash-flow view;
-  recurring expenses.
+- **Phase 2a (done):** Attachments / receipts → Google Drive on every financial
+  transaction (Payments, Expenses, Vendor Payments). Demo mode keeps files as
+  local data URLs; live mode uploads to Drive via the Apps Script `upload` route.
+- **Phase 2b (next):** Bulk Entry (Bulk Expenses / Payments / Vendor Payments) +
+  CSV import; cash-flow view; recurring expenses.
 - **Phase 3:** Advanced accounting, tax reports, multi-user, **Supabase** migration.
 
 The repository pattern + transport layer mean swapping Sheets → Supabase is a

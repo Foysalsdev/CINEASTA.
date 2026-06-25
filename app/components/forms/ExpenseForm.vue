@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExpenseType, NewExpense } from '~/types'
+import type { Attachment, ExpenseType, NewExpense } from '~/types'
 import { EXPENSE_CATEGORIES, EXPENSE_TYPES } from '~/utils/constants'
 
 const props = defineProps<{ defaultProjectId?: string }>()
@@ -19,7 +19,7 @@ onMounted(() => {
 })
 
 const today = new Date().toISOString().slice(0, 10)
-const form = reactive<NewExpense>({
+const form = reactive<NewExpense & { attachments: Attachment[] }>({
   type: (props.defaultProjectId ? 'project' : 'project') as ExpenseType,
   project_id: props.defaultProjectId ?? '',
   vendor_id: '',
@@ -28,6 +28,7 @@ const form = reactive<NewExpense>({
   amount: 0,
   expense_date: today,
   notes: '',
+  attachments: [],
 })
 const saving = ref(false)
 const errors = reactive<Record<string, string>>({})
@@ -134,6 +135,7 @@ async function submit() {
       <label class="field-label">Notes</label>
       <input v-model="form.notes" class="field-input" placeholder="Optional" />
     </div>
+    <AttachmentInput v-model="form.attachments" />
     <div class="flex gap-2 pt-1">
       <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">
