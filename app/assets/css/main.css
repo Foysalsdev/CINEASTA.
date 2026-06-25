@@ -50,7 +50,7 @@
   }
 }
 
-/* Print: only the statement should appear; strip app chrome and shadows. */
+/* Print: only the statement/receipt should appear; strip app chrome + shadows. */
 @media print {
   .no-print {
     display: none !important;
@@ -59,11 +59,32 @@
   body {
     background: #fff !important;
   }
+  /* Force backgrounds, brand fills and dividers to render in the PDF
+     (browsers drop them by default). */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
   .print-page {
     box-shadow: none !important;
     border-radius: 0 !important;
     max-width: 100% !important;
     padding: 0 !important;
+  }
+  /* Keep header/summary/receipt blocks and individual rows whole, but let
+     long tables flow across pages with a repeated header. */
+  .print-keep {
+    break-inside: avoid;
+  }
+  .print-page tr {
+    break-inside: avoid;
+  }
+  .print-page thead {
+    display: table-header-group;
   }
 }
 
