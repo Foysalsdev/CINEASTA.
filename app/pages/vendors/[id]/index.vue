@@ -12,7 +12,7 @@ await useAsyncData(`vendor-${id.value}`, () => vendors.fetchOne(id.value).then((
 const detail = computed(() => vendors.current)
 const s = computed(() => detail.value?.summary)
 
-useHead(() => ({ title: `${detail.value?.vendor.name ?? 'Vendor'} — CINEASTA` }))
+useHead(() => ({ title: `${detail.value?.vendor.name ?? 'Vendor'} — CINEASTA.` }))
 
 const tab = ref<'summary' | 'bills' | 'payments'>('summary')
 const paying = ref(false)
@@ -46,6 +46,14 @@ async function onPaid() {
           <div class="card p-3 text-center"><p class="text-[10px] uppercase tracking-wide text-gray-400">Paid</p><p class="mt-0.5 text-sm font-bold">{{ currency(s.totalPaid) }}</p></div>
           <div class="card p-3 text-center"><p class="text-[10px] uppercase tracking-wide text-gray-400">Due</p><p class="mt-0.5 text-sm font-bold" :class="s.due > 0 ? 'text-amber-600' : 'text-brand-600'">{{ currency(s.due) }}</p></div>
         </section>
+
+        <!-- Branded statement / PDF: full work + payment history -->
+        <NuxtLink :to="`/vendors/${id}/statement`" class="btn-ghost w-full !bg-white ring-1 ring-gray-200">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Statement / PDF
+        </NuxtLink>
 
         <button class="btn-primary w-full" @click="paying = true">+ Pay vendor</button>
 

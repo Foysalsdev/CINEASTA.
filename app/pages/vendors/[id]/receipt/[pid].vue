@@ -23,10 +23,17 @@ const bill = computed(() =>
 )
 const paidToDate = computed(() => {
   if (!payment.value || !bill.value) return 0
-  const cutoff = new Date(payment.value.created_at).getTime()
-  return (detail.value?.payments ?? [])
-    .filter((p) => p.bill_id === payment.value!.bill_id && new Date(p.created_at).getTime() <= cutoff)
-    .reduce((s, p) => s + (Number(p.amount) || 0), 0)
+  const billId = payment.value.bill_id
+  // Order chronologically by payment_date (created_at as tiebreak), matching
+  // the convention in buildProjectVendors — not insertion order.
+  const ordered = (detail.value?.payments ?? [])
+    .filter((p) => p.bill_id === billId)
+    .sort((a, b) => {
+      const byDate = new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
+      return byDate !== 0 ? byDate : new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    })
+  const cutoffIndex = ordered.findIndex((p) => p.id === payment.value!.id)
+  return ordered.slice(0, cutoffIndex + 1).reduce((s, p) => s + (Number(p.amount) || 0), 0)
 })
 const dueAfter = computed(() => Math.max(0, (bill.value?.amount ?? 0) - paidToDate.value))
 const projectName = computed(() => (bill.value ? (projects.byId(bill.value.project_id)?.project_name ?? '') : ''))

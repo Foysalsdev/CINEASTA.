@@ -90,7 +90,7 @@ const hasBill = computed(() => (props.billTotal ?? 0) > 0)
     </section>
 
     <footer class="mt-8 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-      System-generated voucher from CINEASTA Agency Profit Tracker · {{ generatedOn }}
+      System-generated voucher from CINEASTA. Agency Profit Tracker · {{ generatedOn }}
     </footer>
   </article>
 </template>
