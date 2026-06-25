@@ -11,7 +11,7 @@ withDefaults(defineProps<{ size?: number; withWordmark?: boolean }>(), {
 <template>
   <img
     src="/icons/Logo-4.png"
-    alt="CINEASTA"
+    alt="CINEASTA."
     :style="{ height: `${size}px`, width: 'auto' }"
     class="select-none object-contain"
     draggable="false"

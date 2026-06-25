@@ -173,7 +173,7 @@ const vendorTotals = computed(() => ({
     </template>
 
     <footer class="mt-8 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
-      This is a system-generated statement from CINEASTA Agency Profit Tracker · {{ generatedOn }}
+      This is a system-generated statement from CINEASTA. Agency Profit Tracker · {{ generatedOn }}
     </footer>
   </article>
 </template>

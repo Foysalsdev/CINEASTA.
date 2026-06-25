@@ -6,7 +6,7 @@ const projects = useProjectsStore()
 const ui = useUiStore()
 const { currency, percent, date } = useFormat()
 
-useHead({ title: 'Dashboard — CINEASTA' })
+useHead({ title: 'Dashboard — CINEASTA.' })
 
 await useAsyncData('dashboard', async () => {
   await Promise.all([dashboard.fetch(), projects.fetch()])

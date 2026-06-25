@@ -34,7 +34,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'CINEASTA — Agency Profit Tracker',
+      title: 'CINEASTA. — Agency Profit Tracker',
       viewport:
         'width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1',
       meta: [
@@ -42,12 +42,12 @@ export default defineNuxtConfig({
         {
           name: 'description',
           content:
-            'CINEASTA Agency Profit Tracker — know your revenue, expenses, profit and dues at a glance.',
+            'CINEASTA. Agency Profit Tracker — know your revenue, expenses, profit and dues at a glance.',
         },
         { name: 'theme-color', content: '#176a3a' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'CINEASTA' },
+        { name: 'apple-mobile-web-app-title', content: 'CINEASTA.' },
       ],
       link: [
         // Explicit manifest link so the PWA is discoverable/installable even
@@ -62,8 +62,8 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'CINEASTA — Agency Profit Tracker',
-      short_name: 'CINEASTA',
+      name: 'CINEASTA. — Agency Profit Tracker',
+      short_name: 'CINEASTA.',
       description: 'Know your revenue, expenses, profit and dues at a glance.',
       theme_color: '#176a3a',
       background_color: '#ffffff',

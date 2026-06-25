@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const router = useRouter()
-useHead({ title: 'Bulk Entry — CINEASTA' })
+useHead({ title: 'Bulk Entry — CINEASTA.' })
 
 type Mode = 'expenses' | 'payments' | 'vendor' | 'csv'
 const tabs: { value: Mode; label: string }[] = [

@@ -2,7 +2,7 @@
 const reports = useReportsStore()
 const { currency, percent } = useFormat()
 
-useHead({ title: 'Reports — CINEASTA' })
+useHead({ title: 'Reports — CINEASTA.' })
 await useAsyncData('reports', () => reports.fetchAll().then(() => true))
 
 const tab = ref<'monthly' | 'projects' | 'clients' | 'dues'>('monthly')

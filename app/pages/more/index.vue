@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const auth = useAuthStore()
 const { isMock } = useRepositories()
-useHead({ title: 'More — CINEASTA' })
+useHead({ title: 'More — CINEASTA.' })
 
 const groups = [
   {

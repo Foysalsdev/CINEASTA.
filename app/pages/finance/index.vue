@@ -4,7 +4,7 @@ const route = useRoute()
 const router = useRouter()
 const ui = useUiStore()
 
-useHead({ title: 'Finance — CINEASTA' })
+useHead({ title: 'Finance — CINEASTA.' })
 
 const valid: Tab[] = ['payments', 'expenses', 'vendors']
 const tab = ref<Tab>((valid.includes(route.query.tab as Tab) ? route.query.tab : 'payments') as Tab)

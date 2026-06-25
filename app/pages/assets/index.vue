@@ -5,7 +5,7 @@ const assets = useAssetsStore()
 const { currency, date } = useFormat()
 const ui = useUiStore()
 
-useHead({ title: 'Assets — CINEASTA' })
+useHead({ title: 'Assets — CINEASTA.' })
 await useAsyncData('assets', () => assets.fetch().then(() => true))
 
 const adding = ref(false)
