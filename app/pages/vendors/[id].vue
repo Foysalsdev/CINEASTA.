@@ -33,7 +33,10 @@ async function onPaid() {
     <StateBlock :loading="vendors.detailLoading && !detail" :error="vendors.error" :rows="5" @retry="vendors.fetchOne(id)">
       <template v-if="detail && s">
         <div>
-          <h1 class="text-xl font-bold text-gray-900">{{ detail.vendor.name }}</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold text-gray-900">{{ detail.vendor.name }}</h1>
+            <span v-if="detail.vendor.category" class="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">{{ detail.vendor.category }}</span>
+          </div>
           <p class="text-sm text-gray-400">{{ detail.vendor.phone || detail.vendor.email || '—' }}</p>
         </div>
 

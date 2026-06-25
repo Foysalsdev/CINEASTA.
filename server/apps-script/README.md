@@ -19,7 +19,7 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 | Projects       | `id, client_id, project_name, contract_value, start_date, status, created_at`|
 | Payments       | `id, project_id, amount, payment_method, payment_date, notes, attachments, created_at` |
 | Expenses       | `id, type, project_id, vendor_id, asset_id, category, amount, expense_date, notes, attachments, created_at` |
-| Vendors        | `id, name, phone, email, notes, created_at`                                  |
+| Vendors        | `id, name, category, phone, email, notes, created_at`                        |
 | VendorPayments | `id, vendor_id, bill_id, amount, payment_method, payment_date, notes, attachments, created_at` |
 | Assets         | `id, name, category, purchase_value, purchase_date, notes, created_at`       |
 
@@ -64,6 +64,7 @@ with built-in demo data — no backend required.
 | ------ | ------------------------- | -------------------------------------------------- |
 | POST   | `login`                   | `{ token }` if the passcode matches `SCRIPT_PASSWORD` (token-exempt route) |
 | POST   | `upload`                  | `{ id, name, url }` — saves a base64 file to Drive (receipts/attachments) |
+| POST   | `expense-update`          | Updates `amount`/`category`/`notes`/`expense_date` of an expense by `id` (e.g. a vendor's Total Bill) |
 | GET    | `dashboard`               | KPIs, monthly trend, breakdown, rankings, recent   |
 | GET    | `clients`                 | `Client[]`                                          |
 | GET    | `projects`                | `ProjectWithMetrics[]`                              |

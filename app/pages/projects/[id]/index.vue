@@ -1,22 +1,33 @@
 <script setup lang="ts">
+import { buildProjectVendors } from '~/utils/calculations'
+
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 
 const projects = useProjectsStore()
+const vendors = useVendorsStore()
 const dashboard = useDashboardStore()
 const { currency, percent, date } = useFormat()
 
-await useAsyncData(`project-${id.value}`, () => projects.fetchOne(id.value).then(() => true))
+await useAsyncData(`project-${id.value}`, () =>
+  Promise.all([projects.fetchOne(id.value), vendors.fetch()]).then(() => true),
+)
 
 const detail = computed(() => projects.current)
 const m = computed(() => detail.value?.project.metrics)
 
 useHead(() => ({ title: `${detail.value?.project.project_name ?? 'Project'} — CINEASTA` }))
 
-const tab = ref<'overview' | 'payments' | 'expenses'>('overview')
+const tab = ref<'overview' | 'payments' | 'expenses' | 'vendors'>('overview')
+
+// Regular (non-vendor) expenses; vendor bills live in the Vendors tab.
+const regularExpenses = computed(() => (detail.value?.expenses ?? []).filter((e) => !e.vendor_id))
+const vendorLines = computed(() =>
+  detail.value ? buildProjectVendors(id.value, vendors.items, detail.value.expenses, detail.value.vendorPayments) : [],
+)
 
 // Scoped quick-add modal for this project.
-const adding = ref<null | 'payment' | 'expense'>(null)
+const adding = ref<null | 'payment' | 'choose' | 'expense' | 'vendor'>(null)
 async function onSaved() {
   adding.value = null
   await Promise.all([projects.fetchOne(id.value), projects.fetch(true), dashboard.fetch(true)])
@@ -71,7 +82,7 @@ const summary = computed(() => {
         <!-- Tabs -->
         <div class="flex rounded-xl bg-gray-100 p-1 text-sm font-medium">
           <button
-            v-for="t in (['overview', 'payments', 'expenses'] as const)"
+            v-for="t in (['overview', 'payments', 'expenses', 'vendors'] as const)"
             :key="t"
             class="flex-1 rounded-lg py-2.5 capitalize transition"
             :class="tab === t ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'"
@@ -103,10 +114,10 @@ const summary = computed(() => {
           <p v-else class="py-6 text-center text-sm text-gray-400">No payments recorded.</p>
         </SectionCard>
 
-        <!-- Expenses -->
-        <SectionCard v-else title="Expenses" :subtitle="`Cost ${currency(m.totalExpense)}`">
-          <ul v-if="detail.expenses.length" class="divide-y divide-gray-100">
-            <li v-for="e in detail.expenses" :key="e.id" class="py-2.5">
+        <!-- Regular expenses (vendor bills are under the Vendors tab) -->
+        <SectionCard v-else-if="tab === 'expenses'" title="Regular Expenses" :subtitle="`Total cost ${currency(m.totalExpense)}`">
+          <ul v-if="regularExpenses.length" class="divide-y divide-gray-100">
+            <li v-for="e in regularExpenses" :key="e.id" class="py-2.5">
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <p class="truncate text-sm font-medium text-gray-800">{{ e.category }}</p>
@@ -117,8 +128,11 @@ const summary = computed(() => {
               <AttachmentChips :items="e.attachments" />
             </li>
           </ul>
-          <p v-else class="py-6 text-center text-sm text-gray-400">No expenses recorded.</p>
+          <p v-else class="py-6 text-center text-sm text-gray-400">No regular expenses. Vendor bills are in the Vendors tab.</p>
         </SectionCard>
+
+        <!-- Vendors: per-vendor Total Bill, payments & due -->
+        <ProjectVendors v-else :project-id="id" :lines="vendorLines" @changed="onSaved" />
 
         <!-- spacer so the sticky action bar never hides the last row -->
         <div class="h-16" />
@@ -128,15 +142,38 @@ const summary = computed(() => {
         <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4">
           <div class="mx-auto flex max-w-md gap-2 pr-[4.25rem]">
             <button class="btn-primary flex-1 shadow-lg shadow-brand-600/20" @click="adding = 'payment'">+ Payment</button>
-            <button class="btn-ghost flex-1 !bg-white shadow-lg ring-1 ring-gray-200" @click="adding = 'expense'">+ Expense</button>
+            <button class="btn-ghost flex-1 !bg-white shadow-lg ring-1 ring-gray-200" @click="adding = 'choose'">+ Expense</button>
           </div>
         </div>
 
         <AppModal v-if="adding === 'payment'" title="Record Payment" @close="adding = null">
           <PaymentForm :default-project-id="id" @saved="onSaved" @cancel="adding = null" />
         </AppModal>
-        <AppModal v-if="adding === 'expense'" title="Add Expense" @close="adding = null">
-          <ExpenseForm :default-project-id="id" @saved="onSaved" @cancel="adding = null" />
+
+        <!-- Expense kind chooser: Regular vs Vendor Payment -->
+        <AppModal v-if="adding === 'choose'" title="Add Expense" @close="adding = null">
+          <div class="space-y-3">
+            <button class="w-full rounded-xl bg-gray-100 p-4 text-left active:scale-[0.99]" @click="adding = 'expense'">
+              <p class="text-sm font-semibold text-gray-900">Regular Expense</p>
+              <p class="text-xs text-gray-500">A direct cost — transport, food, crew… with a receipt.</p>
+            </button>
+            <button class="w-full rounded-xl bg-brand-50 p-4 text-left active:scale-[0.99]" @click="adding = 'vendor'">
+              <p class="text-sm font-semibold text-brand-700">Vendor Payment</p>
+              <p class="text-xs text-brand-600/80">Set a vendor's Total Bill and track payments &amp; due.</p>
+            </button>
+          </div>
+        </AppModal>
+
+        <AppModal v-if="adding === 'expense'" title="Regular Expense" @close="adding = null">
+          <ExpenseForm :default-project-id="id" regular-only @saved="onSaved" @cancel="adding = null" />
+        </AppModal>
+        <AppModal v-if="adding === 'vendor'" title="Add Vendor to Project" @close="adding = null">
+          <ProjectVendorSetupForm
+            :project-id="id"
+            :existing-vendor-ids="vendorLines.map((l) => l.vendor.id)"
+            @saved="onSaved"
+            @cancel="adding = null"
+          />
         </AppModal>
       </template>
     </StateBlock>

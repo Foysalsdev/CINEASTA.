@@ -86,6 +86,7 @@ export interface Expense {
 export interface Vendor {
   id: ID
   name: string
+  category: string // vendor type: Camera, Light, Art, Transport…
   phone: string
   email: string
   notes: string
@@ -241,6 +242,19 @@ export interface VendorDetail {
   bills: VendorBillLine[]
   payments: VendorPayment[]
   summary: VendorSummary
+}
+
+// One vendor's engagement on a single project: a Total Bill (set once) plus the
+// running payments made against it. due = totalBill − paid.
+export interface ProjectVendorLine {
+  vendor: Vendor
+  billIds: ID[]
+  primaryBillId: ID
+  category: string
+  totalBill: number
+  paid: number
+  due: number
+  payments: VendorPayment[] // oldest first
 }
 
 // =============================================================================

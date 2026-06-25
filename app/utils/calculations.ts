@@ -19,6 +19,7 @@ import type {
   Payment,
   Project,
   ProjectMetrics,
+  ProjectVendorLine,
   ProjectWithMetrics,
   RankedClient,
   RankedProject,
@@ -362,6 +363,52 @@ export function buildVendorDetail(
     payments: pays,
     summary: buildVendorSummary(vendor.id, expenses, vendorPayments),
   }
+}
+
+/**
+ * Per-project vendor engagements. Each vendor on a project has a Total Bill
+ * (Σ of that vendor's expense rows for the project) and a running set of
+ * payments (vendor payments whose bill_id points at one of those rows).
+ * due = Total Bill − Paid.
+ */
+export function buildProjectVendors(
+  projectId: string,
+  vendors: Vendor[],
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): ProjectVendorLine[] {
+  const vendorById = new Map(vendors.map((v) => [v.id, v]))
+  const billsByVendor = new Map<string, Expense[]>()
+  for (const e of expenses) {
+    if (e.project_id !== projectId || !e.vendor_id) continue
+    const list = billsByVendor.get(e.vendor_id)
+    if (list) list.push(e)
+    else billsByVendor.set(e.vendor_id, [e])
+  }
+
+  const lines: ProjectVendorLine[] = []
+  for (const [vendorId, bills] of billsByVendor) {
+    const billIds = bills.map((b) => b.id)
+    const totalBill = sumBy(bills, (b) => b.amount)
+    const payments = vendorPayments
+      .filter((vp) => billIds.includes(vp.bill_id))
+      .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
+    const paid = sumBy(payments, (vp) => vp.amount)
+    const vendor =
+      vendorById.get(vendorId) ??
+      ({ id: vendorId, name: 'Unknown vendor', category: '', phone: '', email: '', notes: '', created_at: '' } as Vendor)
+    lines.push({
+      vendor,
+      billIds,
+      primaryBillId: billIds[0] ?? '',
+      category: vendor.category || '',
+      totalBill,
+      paid,
+      due: round2(Math.max(0, totalBill - paid)),
+      payments,
+    })
+  }
+  return lines.sort((a, b) => b.due - a.due)
 }
 
 /** Total outstanding payables across all vendors (never negative overall). */

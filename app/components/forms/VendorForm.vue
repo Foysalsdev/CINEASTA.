@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import type { NewVendor } from '~/types'
+import { VENDOR_CATEGORIES } from '~/utils/constants'
+
+const props = defineProps<{ defaultCategory?: string }>()
 const emit = defineEmits<{ saved: [id: string]; cancel: [] }>()
 
 const vendors = useVendorsStore()
 const ui = useUiStore()
-const form = reactive<NewVendor>({ name: '', phone: '', email: '', notes: '' })
+const form = reactive<NewVendor>({
+  name: '',
+  category: props.defaultCategory ?? '',
+  phone: '',
+  email: '',
+  notes: '',
+})
 const saving = ref(false)
 const error = ref('')
+
+const categoryOptions = VENDOR_CATEGORIES.map((c) => ({ value: c, label: c }))
 
 async function submit() {
   if (!form.name.trim() || saving.value) {
@@ -32,6 +43,10 @@ async function submit() {
       <label class="field-label">Vendor name *</label>
       <input v-model="form.name" class="field-input" placeholder="e.g. Lenscraft Rentals" />
       <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
+    </div>
+    <div>
+      <label class="field-label">Vendor type</label>
+      <Combobox v-model="form.category" :options="categoryOptions" mode="free" placeholder="Camera, Light, Art…" />
     </div>
     <div class="grid grid-cols-2 gap-3">
       <div>

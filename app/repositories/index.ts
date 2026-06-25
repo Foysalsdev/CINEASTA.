@@ -29,6 +29,7 @@ export interface ProjectDetail {
   project: ProjectWithMetrics
   payments: Payment[]
   expenses: Expense[]
+  vendorPayments: VendorPayment[]
 }
 
 export function useRepositories() {
@@ -65,6 +66,8 @@ export function useRepositories() {
     expenses: {
       list: () => api.get<Expense[]>('expenses'),
       create: (payload: NewExpense) => api.post<Expense>('expense', payload),
+      update: (id: string, patch: Partial<NewExpense>) =>
+        api.post<Expense>('expense-update', { id, ...patch }),
     },
 
     vendors: {

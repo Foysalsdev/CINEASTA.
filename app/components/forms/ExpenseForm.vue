@@ -2,7 +2,9 @@
 import type { Attachment, ExpenseType, NewExpense } from '~/types'
 import { EXPENSE_CATEGORIES, EXPENSE_TYPES } from '~/utils/constants'
 
-const props = defineProps<{ defaultProjectId?: string }>()
+// `regularOnly` is used inside a project: a plain expense (no type toggle, no
+// vendor) — vendor bills are handled by the project's Vendor Payment flow.
+const props = defineProps<{ defaultProjectId?: string; regularOnly?: boolean }>()
 const emit = defineEmits<{ saved: []; cancel: [] }>()
 
 const projects = useProjectsStore()
@@ -81,7 +83,7 @@ async function submit() {
 <template>
   <form class="space-y-4" @submit.prevent="submit">
     <!-- Expense type -->
-    <div>
+    <div v-if="!regularOnly">
       <label class="field-label">Expense type</label>
       <div class="grid grid-cols-2 gap-2">
         <button
@@ -109,7 +111,7 @@ async function submit() {
       <Combobox v-model="form.asset_id" :options="assetOptions" mode="select" placeholder="Link an asset (optional)…" />
     </div>
 
-    <div>
+    <div v-if="!regularOnly">
       <label class="field-label">Vendor / Paid to</label>
       <Combobox v-model="form.vendor_id" :options="vendorOptions" mode="select" placeholder="Pick a vendor (optional)…" />
       <p class="mt-1 text-xs text-gray-400">Add vendors from Finance → Vendors.</p>
