@@ -7,7 +7,7 @@ const auth = useAuthStore()
   <div class="mx-auto min-h-screen max-w-md bg-gray-50">
     <!-- Top bar -->
     <header class="sticky top-0 z-30 flex items-center justify-between border-b border-gray-100 bg-white/95 px-4 py-3 backdrop-blur">
-      <BrandMark :size="26" />
+      <BrandMark :size="34" />
       <div class="flex items-center gap-2">
         <span
           v-if="isMock"

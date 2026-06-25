@@ -24,11 +24,8 @@ async function submit() {
   <div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-6">
     <div class="w-full max-w-sm">
       <div class="mb-8 flex flex-col items-center text-center">
-        <BrandMark :size="56" :with-wordmark="false" />
-        <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-gray-900">
-          CINEASTA<span class="text-brand-600">.</span>
-        </h1>
-        <p class="mt-1 text-sm text-gray-400">Agency Profit Tracker</p>
+        <BrandMark :size="104" />
+        <p class="mt-3 text-sm text-gray-400">Agency Profit Tracker</p>
       </div>
 
       <div class="card p-6">

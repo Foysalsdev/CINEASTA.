@@ -24,11 +24,8 @@ const dueTotal = computed(() =>
     <!-- Brand header -->
     <header class="flex items-start justify-between border-b-2 border-brand-600 pb-5">
       <div class="flex items-center gap-3">
-        <BrandMark :size="44" :with-wordmark="false" />
-        <div>
-          <p class="text-xl font-extrabold tracking-tight">CINEASTA<span class="text-brand-600">.</span></p>
-          <p class="text-xs text-gray-400">Agency Profit Tracker</p>
-        </div>
+        <BrandMark :size="56" />
+        <p class="text-xs text-gray-400">Agency Profit Tracker</p>
       </div>
       <div class="text-right">
         <p class="text-lg font-bold">Project Statement</p>
