@@ -6,7 +6,7 @@ const clients = useClientsStore()
 const ui = useUiStore()
 
 const form = reactive<NewClient>({ name: '', phone: '', email: '', notes: '' })
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const errors = reactive<Record<string, string>>({})
 
 function validate(): boolean {
@@ -18,17 +18,16 @@ function validate(): boolean {
 }
 
 async function submit() {
-  if (!validate() || saving.value) return
-  saving.value = true
-  try {
-    await clients.add({ ...form })
-    ui.toast('Client added')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  if (!validate()) return
+  await guard(async () => {
+    try {
+      await clients.add({ ...form })
+      ui.toast('Client added')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -55,7 +54,7 @@ async function submit() {
       <textarea v-model="form.notes" rows="2" class="field-input" placeholder="Optional" />
     </div>
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">
         {{ saving ? 'Saving…' : 'Add client' }}
       </button>

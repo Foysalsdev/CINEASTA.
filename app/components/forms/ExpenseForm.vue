@@ -32,7 +32,7 @@ const form = reactive<NewExpense & { attachments: Attachment[] }>({
   notes: '',
   attachments: [],
 })
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const errors = reactive<Record<string, string>>({})
 // Vendor tagging is opt-in so the default no-vendor flow stays a 3-field form
 // (category, amount, date) — most expenses aren't paid to a tracked vendor.
@@ -63,24 +63,23 @@ function validate(): boolean {
 }
 
 async function submit() {
-  if (!validate() || saving.value) return
-  saving.value = true
-  try {
-    await expenses.add({
-      ...form,
-      project_id: showProject.value ? form.project_id : '',
-      vendor_id: showVendorField.value ? form.vendor_id : '',
-      asset_id: showAsset.value ? form.asset_id : '',
-      category: form.category.trim() || 'Uncategorized',
-      amount: Number(form.amount) || 0,
-    })
-    ui.toast('Expense added')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  if (!validate()) return
+  await guard(async () => {
+    try {
+      await expenses.add({
+        ...form,
+        project_id: showProject.value ? form.project_id : '',
+        vendor_id: showVendorField.value ? form.vendor_id : '',
+        asset_id: showAsset.value ? form.asset_id : '',
+        category: form.category.trim() || 'Uncategorized',
+        amount: Number(form.amount) || 0,
+      })
+      ui.toast('Expense added')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -151,7 +150,7 @@ async function submit() {
     </div>
     <AttachmentInput v-model="form.attachments" />
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">
         {{ saving ? 'Saving…' : 'Add expense' }}
       </button>

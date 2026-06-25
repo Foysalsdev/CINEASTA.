@@ -23,7 +23,7 @@ interface Row {
   amount: number | null
 }
 const rows = reactive<Row[]>([{ vendorId: '', amount: null }, { vendorId: '', amount: null }])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 
 // Lazy cache of each vendor's bills/due so we can allocate oldest-first.
 const detailCache = reactive<Record<string, VendorDetail>>({})
@@ -83,34 +83,33 @@ function allocate(bills: VendorBillLine[], amount: number): { bill_id: string; a
 }
 
 async function save() {
-  if (saving.value || !valid.value.length) return
-  saving.value = true
-  try {
-    let count = 0
-    for (const r of valid.value) {
-      const detail = detailCache[r.vendorId] ?? (await repo.vendors.get(r.vendorId))
-      detailCache[r.vendorId] = detail
-      const allocations = allocate(detail.bills, Number(r.amount) || 0)
-      for (const a of allocations) {
-        await repo.vendors.pay({
-          vendor_id: r.vendorId,
-          bill_id: a.bill_id,
-          amount: a.amount,
-          payment_method: method.value,
-          payment_date: sharedDate.value,
-          notes: '',
-        })
+  if (!valid.value.length) return
+  await guard(async () => {
+    try {
+      let count = 0
+      for (const r of valid.value) {
+        const detail = detailCache[r.vendorId] ?? (await repo.vendors.get(r.vendorId))
+        detailCache[r.vendorId] = detail
+        const allocations = allocate(detail.bills, Number(r.amount) || 0)
+        for (const a of allocations) {
+          await repo.vendors.pay({
+            vendor_id: r.vendorId,
+            bill_id: a.bill_id,
+            amount: a.amount,
+            payment_method: method.value,
+            payment_date: sharedDate.value,
+            notes: '',
+          })
+        }
+        count++
       }
-      count++
+      ui.toast(`Paid ${count} vendor${count > 1 ? 's' : ''}`)
+      await Promise.all([dashboard.fetch(true), projects.fetch(true), vendors.fetch(true)])
+      emit('done')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
     }
-    ui.toast(`Paid ${count} vendor${count > 1 ? 's' : ''}`)
-    await Promise.all([dashboard.fetch(true), projects.fetch(true), vendors.fetch(true)])
-    emit('done')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 

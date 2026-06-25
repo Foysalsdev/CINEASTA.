@@ -23,7 +23,7 @@ const payDate = ref(today)
 const notes = ref('')
 const attachments = ref<Attachment[]>([])
 
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const error = ref('')
 const showNewVendor = ref(false)
 
@@ -46,7 +46,6 @@ function onVendorCreated(id: string) {
 }
 
 async function submit() {
-  if (saving.value) return
   if (!vendorId.value) {
     error.value = 'Pick a vendor'
     return
@@ -60,36 +59,35 @@ async function submit() {
     return
   }
   error.value = ''
-  saving.value = true
-  try {
-    const bill = await repo.expenses.create({
-      type: 'project',
-      project_id: props.projectId,
-      vendor_id: vendorId.value,
-      asset_id: '',
-      category: selectedVendor.value?.category || selectedVendor.value?.name || 'Vendor Bill',
-      amount: Number(totalBill.value) || 0,
-      expense_date: today,
-      notes: notes.value,
-    })
-    if (payNow.value && Number(payAmount.value) > 0) {
-      await vendors.pay({
+  await guard(async () => {
+    try {
+      const bill = await repo.expenses.create({
+        type: 'project',
+        project_id: props.projectId,
         vendor_id: vendorId.value,
-        bill_id: bill.id,
-        amount: Math.min(Number(payAmount.value), Number(totalBill.value)),
-        payment_method: method.value,
-        payment_date: payDate.value,
+        asset_id: '',
+        category: selectedVendor.value?.category || selectedVendor.value?.name || 'Vendor Bill',
+        amount: Number(totalBill.value) || 0,
+        expense_date: today,
         notes: notes.value,
-        attachments: attachments.value,
       })
+      if (payNow.value && Number(payAmount.value) > 0) {
+        await vendors.pay({
+          vendor_id: vendorId.value,
+          bill_id: bill.id,
+          amount: Math.min(Number(payAmount.value), Number(totalBill.value)),
+          payment_method: method.value,
+          payment_date: payDate.value,
+          notes: notes.value,
+          attachments: attachments.value,
+        })
+      }
+      ui.toast('Vendor added to project')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
     }
-    ui.toast('Vendor added to project')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 
@@ -147,7 +145,7 @@ async function submit() {
     <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
 
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
     </div>
 

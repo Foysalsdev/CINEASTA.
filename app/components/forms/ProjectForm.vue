@@ -18,7 +18,7 @@ const form = reactive<NewProject>({
   start_date: today,
   status: 'active' as ProjectStatus,
 })
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 const errors = reactive<Record<string, string>>({})
 
 const clientOptions = computed(() =>
@@ -33,17 +33,16 @@ function validate(): boolean {
 }
 
 async function submit() {
-  if (!validate() || saving.value) return
-  saving.value = true
-  try {
-    await projects.add({ ...form, contract_value: Number(form.contract_value) || 0 })
-    ui.toast('Project created')
-    emit('saved')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  if (!validate()) return
+  await guard(async () => {
+    try {
+      await projects.add({ ...form, contract_value: Number(form.contract_value) || 0 })
+      ui.toast('Project created')
+      emit('saved')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
+    }
+  })
 }
 </script>
 
@@ -80,7 +79,7 @@ async function submit() {
       </select>
     </div>
     <div class="flex gap-2 pt-1">
-      <button type="button" class="btn-ghost flex-1" @click="emit('cancel')">Cancel</button>
+      <button type="button" class="btn-ghost flex-1" :disabled="saving" @click="emit('cancel')">Cancel</button>
       <button type="submit" class="btn-primary flex-1" :disabled="saving">
         {{ saving ? 'Saving…' : 'Create project' }}
       </button>

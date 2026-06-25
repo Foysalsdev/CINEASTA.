@@ -1,14 +1,21 @@
 <script setup lang="ts">
 const props = defineProps<{ title: string }>()
 const emit = defineEmits<{ close: [] }>()
+const ui = useUiStore()
 
 const panel = ref<HTMLElement | null>(null)
 const dragY = ref(0)
 const dragging = ref(false)
 let startY = 0
 
+// A save in flight (ui.busy) must run to completion — dismissing here would
+// let the user reopen and resubmit before the first request settles.
+function requestClose() {
+  if (!ui.busy) emit('close')
+}
+
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') requestClose()
 }
 
 // Lock background scroll so only the sheet scrolls (one-hand friendly on iOS).
@@ -40,8 +47,8 @@ function onTouchMove(e: TouchEvent) {
 }
 function onTouchEnd() {
   dragging.value = false
-  if (dragY.value > 120) emit('close')
-  else dragY.value = 0
+  if (dragY.value > 120) requestClose()
+  dragY.value = 0
 }
 </script>
 
@@ -49,7 +56,7 @@ function onTouchEnd() {
   <div class="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
     <div
       class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
-      @click="emit('close')"
+      @click="requestClose"
     />
     <div
       ref="panel"
@@ -72,9 +79,10 @@ function onTouchEnd() {
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-base font-bold text-gray-900">{{ props.title }}</h3>
           <button
-            class="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100"
+            class="flex h-9 w-9 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 disabled:opacity-40"
             aria-label="Close"
-            @click="emit('close')"
+            :disabled="ui.busy"
+            @click="requestClose"
           >
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" />

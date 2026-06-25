@@ -23,7 +23,7 @@ interface Row {
   notes: string
 }
 const rows = reactive<Row[]>([{ amount: null, notes: '' }, { amount: null, notes: '' }, { amount: null, notes: '' }])
-const saving = ref(false)
+const { saving, guard } = useSavingGuard()
 
 const projectOptions = computed(() =>
   projects.items.map((p) => ({ value: p.id, label: p.project_name, hint: p.client_name })),
@@ -41,31 +41,30 @@ function removeRow(i: number) {
 }
 
 async function save() {
-  if (saving.value || !valid.value.length) return
+  if (!valid.value.length) return
   if (!projectId.value) {
     error.value = 'Pick a project first'
     return
   }
   error.value = ''
-  saving.value = true
-  try {
-    for (const r of valid.value) {
-      await payments.add({
-        project_id: projectId.value,
-        amount: Number(r.amount) || 0,
-        payment_method: method.value,
-        payment_date: sharedDate.value,
-        notes: r.notes,
-      })
+  await guard(async () => {
+    try {
+      for (const r of valid.value) {
+        await payments.add({
+          project_id: projectId.value,
+          amount: Number(r.amount) || 0,
+          payment_method: method.value,
+          payment_date: sharedDate.value,
+          notes: r.notes,
+        })
+      }
+      ui.toast(`${valid.value.length} payment${valid.value.length > 1 ? 's' : ''} recorded`)
+      await Promise.all([dashboard.fetch(true), projects.fetch(true)])
+      emit('done')
+    } catch (e) {
+      ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
     }
-    ui.toast(`${valid.value.length} payment${valid.value.length > 1 ? 's' : ''} recorded`)
-    await Promise.all([dashboard.fetch(true), projects.fetch(true)])
-    emit('done')
-  } catch (e) {
-    ui.toast(e instanceof Error ? e.message : 'Failed to save', 'error')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 
