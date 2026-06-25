@@ -164,8 +164,11 @@ Apps Script API so the dashboard opens instantly and stays usable offline.
   gets a **Total Bill** (set once per project) with running payments, per-payment
   receipts, and a history showing Total & Due. Vendors carry a category/type;
   the global Vendors directory still aggregates dues across projects.
-- **Phase 2c (next):** Bulk Entry (Bulk Expenses / Payments / Vendor Payments) +
-  CSV import; cash-flow view; recurring expenses.
+- **Phase 2c (done):** Bulk Entry — one screen (`/bulk`) to add many rows at
+  once: Bulk Expenses, Bulk Payments, and Bulk Vendor Payments (each amount is
+  auto-allocated to a vendor's oldest unpaid bills, remainder kept as advance),
+  with shared per-batch defaults and a running total.
+- **Phase 2d (next):** CSV import; cash-flow view; recurring expenses.
 - **Phase 3:** Advanced accounting, tax reports, multi-user, **Supabase** migration.
 
 The repository pattern + transport layer mean swapping Sheets → Supabase is a
