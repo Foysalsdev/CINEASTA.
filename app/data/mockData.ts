@@ -16,7 +16,7 @@ import type {
   VendorPayment,
 } from '~/types'
 
-const STORAGE_KEY = 'cineasta:mockdb:v4'
+const STORAGE_KEY = 'cineasta:mockdb:v5'
 
 export interface MockDB {
   clients: Client[]
@@ -64,10 +64,10 @@ function seed(): MockDB {
   ]
 
   const vendors: Vendor[] = [
-    { id: 'v1', name: 'Lenscraft Rentals', phone: '+8801911000001', email: 'rent@lenscraft.bd', notes: 'Camera & lens', created_at: iso(160) },
-    { id: 'v2', name: 'Spotlight House', phone: '+8801911000002', email: 'book@spotlight.bd', notes: 'Lights & gear', created_at: iso(140) },
-    { id: 'v3', name: 'StarCast Agency', phone: '+8801911000003', email: 'cast@starcast.bd', notes: 'Talent', created_at: iso(120) },
-    { id: 'v4', name: 'Skyline Studio', phone: '+8801911000004', email: 'hello@skyline.bd', notes: 'Studio floor', created_at: iso(100) },
+    { id: 'v1', name: 'Lenscraft Rentals', category: 'Camera & Lens', phone: '+8801911000001', email: 'rent@lenscraft.bd', notes: 'Camera & lens', created_at: iso(160) },
+    { id: 'v2', name: 'Spotlight House', category: 'Light & Grip', phone: '+8801911000002', email: 'book@spotlight.bd', notes: 'Lights & gear', created_at: iso(140) },
+    { id: 'v3', name: 'StarCast Agency', category: 'Artist & Casting', phone: '+8801911000003', email: 'cast@starcast.bd', notes: 'Talent', created_at: iso(120) },
+    { id: 'v4', name: 'Skyline Studio', category: 'Location & Studio', phone: '+8801911000004', email: 'hello@skyline.bd', notes: 'Studio floor', created_at: iso(100) },
   ]
 
   const exp = (

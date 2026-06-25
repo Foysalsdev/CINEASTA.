@@ -80,11 +80,15 @@ export async function mockApi<T>(
         const project = db.projects.find((p) => p.id === params.id)
         if (!project) return delay(fail<T>('Project not found'))
         const [withMetrics] = projectsWithMetrics([project], db.clients, db.payments, db.expenses)
+        const billIds = new Set(
+          db.expenses.filter((e) => e.project_id === project.id).map((e) => e.id),
+        )
         return delay(
           ok({
             project: withMetrics,
             payments: db.payments.filter((p) => p.project_id === project.id),
             expenses: db.expenses.filter((e) => e.project_id === project.id),
+            vendorPayments: db.vendorPayments.filter((vp) => billIds.has(vp.bill_id)),
           } as T),
         )
       }
@@ -155,6 +159,17 @@ export async function mockApi<T>(
       if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
       const row = { ...p, id: genId('e'), created_at: new Date().toISOString() }
       db.expenses.push(row)
+      persist()
+      return delay(ok(row as T))
+    }
+    case 'expense-update': {
+      const p = body as { id?: string } & Partial<NewExpense>
+      const row = db.expenses.find((e) => e.id === p?.id)
+      if (!row) return delay(fail<T>('Expense not found'))
+      if (p.amount !== undefined) row.amount = Number(p.amount) || 0
+      if (p.category !== undefined) row.category = p.category
+      if (p.notes !== undefined) row.notes = p.notes
+      if (p.expense_date !== undefined) row.expense_date = p.expense_date
       persist()
       return delay(ok(row as T))
     }

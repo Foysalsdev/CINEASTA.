@@ -38,7 +38,9 @@ const totalDue = computed(() => reports.vendorDues.reduce((a, r) => a + r.due, 0
           <NuxtLink :to="`/vendors/${v.id}`" class="flex items-center justify-between gap-2 p-4 active:bg-gray-50">
             <div class="min-w-0">
               <p class="truncate font-medium text-gray-900">{{ v.name }}</p>
-              <p class="truncate text-xs text-gray-400">{{ v.phone || v.email || '—' }}</p>
+              <p class="truncate text-xs text-gray-400">
+                <span v-if="v.category">{{ v.category }} · </span>{{ v.phone || v.email || '—' }}
+              </p>
             </div>
             <div class="shrink-0 text-right">
               <p class="text-sm font-semibold" :class="(dueById.get(v.id)?.due ?? 0) > 0 ? 'text-amber-600' : 'text-brand-600'">

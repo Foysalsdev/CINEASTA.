@@ -36,6 +36,23 @@ export const EXPENSE_CATEGORIES: string[] = [
   'Miscellaneous',
 ]
 
+// Vendor types/categories — used when registering a vendor and grouping them.
+// Free-form: the user can type any value; these power the picker.
+export const VENDOR_CATEGORIES: string[] = [
+  'Camera & Lens',
+  'Light & Grip',
+  'Art & Set',
+  'Costume & Makeup',
+  'Artist & Casting',
+  'Location & Studio',
+  'Transport',
+  'Catering',
+  'Sound & Music',
+  'Post / VFX',
+  'Generator & Fuel',
+  'Other',
+]
+
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'cash', label: 'Cash' },
   { value: 'bank', label: 'Bank Transfer' },

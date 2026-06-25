@@ -159,7 +159,12 @@ Apps Script API so the dashboard opens instantly and stays usable offline.
 - **Phase 2a (done):** Attachments / receipts → Google Drive on every financial
   transaction (Payments, Expenses, Vendor Payments). Demo mode keeps files as
   local data URLs; live mode uploads to Drive via the Apps Script `upload` route.
-- **Phase 2b (next):** Bulk Entry (Bulk Expenses / Payments / Vendor Payments) +
+- **Phase 2b (done):** Project-scoped vendor payments — inside a project an
+  expense is either a **Regular Expense** or a **Vendor Payment**. Each vendor
+  gets a **Total Bill** (set once per project) with running payments, per-payment
+  receipts, and a history showing Total & Due. Vendors carry a category/type;
+  the global Vendors directory still aggregates dues across projects.
+- **Phase 2c (next):** Bulk Entry (Bulk Expenses / Payments / Vendor Payments) +
   CSV import; cash-flow view; recurring expenses.
 - **Phase 3:** Advanced accounting, tax reports, multi-user, **Supabase** migration.
 

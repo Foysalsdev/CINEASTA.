@@ -36,7 +36,7 @@ var SHEETS = {
   Projects: ['id', 'client_id', 'project_name', 'contract_value', 'start_date', 'status', 'created_at'],
   Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'attachments', 'created_at'],
   Expenses: ['id', 'type', 'project_id', 'vendor_id', 'asset_id', 'category', 'amount', 'expense_date', 'notes', 'attachments', 'created_at'],
-  Vendors: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
+  Vendors: ['id', 'name', 'category', 'phone', 'email', 'notes', 'created_at'],
   VendorPayments: ['id', 'vendor_id', 'bill_id', 'amount', 'payment_method', 'payment_date', 'notes', 'attachments', 'created_at'],
   Assets: ['id', 'name', 'category', 'purchase_value', 'purchase_date', 'notes', 'created_at']
 };
@@ -102,6 +102,7 @@ function route(method, path, params, body) {
     case 'project': return createProject(body);
     case 'payment': return createPayment(body);
     case 'expense': return createExpense(body);
+    case 'expense-update': return updateExpense(body);
     case 'vendor': return createVendor(body);
     case 'vendor-payment': return createVendorPayment(body);
     case 'asset': return createAsset(body);
@@ -241,10 +242,13 @@ function projectDetail(id) {
   clients.forEach(function (c) { clientName[c.id] = c.name; });
   var payments = readAll('Payments').filter(function (p) { return p.project_id === id; });
   var expenses = readAll('Expenses').filter(function (x) { return x.project_id === id; });
+  var billIds = {};
+  expenses.forEach(function (e) { billIds[e.id] = true; });
+  var vendorPayments = readAll('VendorPayments').filter(function (vp) { return billIds[vp.bill_id]; });
   project.client_name = clientName[project.client_id] || '—';
   project.contract_value = num_(project.contract_value);
   project.metrics = computeMetrics_(project, payments, expenses);
-  return { project: project, payments: payments, expenses: expenses };
+  return { project: project, payments: payments, expenses: expenses, vendorPayments: vendorPayments };
 }
 
 function buildDashboard() {
@@ -474,12 +478,39 @@ function createVendor(body) {
   var row = {
     id: genId_('v'),
     name: requireText_(body.name, 'Vendor name'),
+    category: body.category || '',
     phone: body.phone || '',
     email: body.email || '',
     notes: body.notes || '',
     created_at: nowIso_()
   };
   return appendRow_('Vendors', row);
+}
+
+// Update editable fields of an existing expense (used to adjust a vendor's
+// Total Bill on a project). Rewrites the matching row in place.
+function updateExpense(body) {
+  requireText_(body.id, 'Expense id');
+  var sh = sheet_('Expenses');
+  var values = sh.getDataRange().getValues();
+  var headers = values[0];
+  var idCol = headers.indexOf('id');
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][idCol]) !== String(body.id)) continue;
+    var editable = ['amount', 'category', 'notes', 'expense_date'];
+    for (var k = 0; k < editable.length; k++) {
+      var key = editable[k];
+      if (body[key] === undefined) continue;
+      var col = headers.indexOf(key);
+      if (col < 0) continue;
+      values[r][col] = key === 'amount' ? num_(body[key]) : body[key];
+    }
+    sh.getRange(r + 1, 1, 1, headers.length).setValues([values[r]]);
+    var obj = {};
+    for (var c = 0; c < headers.length; c++) obj[headers[c]] = values[r][c];
+    return obj;
+  }
+  throw new Error('Expense not found');
 }
 
 function createVendorPayment(body) {
