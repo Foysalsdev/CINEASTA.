@@ -3,10 +3,15 @@ import type { ProjectDetail } from '~/repositories'
 import type { Vendor } from '~/types'
 import { buildProjectVendors, sumBy } from '~/utils/calculations'
 
-const props = withDefaults(defineProps<{ detail: ProjectDetail; vendors?: Vendor[] }>(), {
-  vendors: () => [],
-})
+const props = withDefaults(
+  defineProps<{ detail: ProjectDetail; vendors?: Vendor[]; mode?: 'client' | 'internal' }>(),
+  { vendors: () => [], mode: 'client' },
+)
 const { currency, percent, date } = useFormat()
+
+// Contract value, cost, profit, margin and vendor payables are confidential —
+// only shown on the Internal copy, never on a client/vendor-facing statement.
+const confidential = computed(() => props.mode === 'internal')
 
 const m = computed(() => props.detail.project.metrics)
 const generatedOn = new Date().toLocaleDateString('en-GB', {
@@ -15,6 +20,23 @@ const generatedOn = new Date().toLocaleDateString('en-GB', {
   year: 'numeric',
 })
 const paymentsTotal = computed(() => sumBy(props.detail.payments, (p) => p.amount))
+
+const summaryCells = computed(() => {
+  const cells: { label: string; value: string; cls?: string }[] = [
+    { label: 'Total Received', value: currency(m.value.totalReceived), cls: 'text-brand-600' },
+    { label: 'Outstanding Due', value: currency(m.value.outstandingDue), cls: 'text-amber-600' },
+  ]
+  if (confidential.value) {
+    cells.unshift({ label: 'Contract Value', value: currency(props.detail.project.contract_value) })
+    cells.push(
+      { label: 'Total Cost (Expenses)', value: currency(m.value.totalExpense), cls: 'text-red-600' },
+      { label: 'Current Profit', value: currency(m.value.currentProfit), cls: m.value.currentProfit >= 0 ? 'text-brand-600' : 'text-red-600' },
+      { label: 'Profit Margin', value: percent(m.value.profitMargin) },
+    )
+  }
+  return cells
+})
+
 // Regular (non-vendor) expenses are itemised; vendor bills get their own section.
 const regularExpenses = computed(() => props.detail.expenses.filter((e) => !e.vendor_id))
 const regularTotal = computed(() => sumBy(regularExpenses.value, (e) => e.amount))
@@ -38,6 +60,9 @@ const vendorTotals = computed(() => ({
       </div>
       <div class="text-right">
         <p class="text-lg font-bold">Project Statement</p>
+        <p class="text-xs" :class="confidential ? 'font-semibold text-red-500' : 'text-gray-400'">
+          {{ confidential ? 'Internal copy — confidential' : 'Statement of account' }}
+        </p>
         <p class="text-xs text-gray-400">Generated {{ generatedOn }}</p>
       </div>
     </header>
@@ -60,12 +85,10 @@ const vendorTotals = computed(() => ({
     <section class="print-keep mt-6">
       <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Financial Summary</h2>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200 sm:grid-cols-3">
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Contract Value</p><p class="text-base font-bold">{{ currency(detail.project.contract_value) }}</p></div>
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Total Received</p><p class="text-base font-bold text-brand-600">{{ currency(m.totalReceived) }}</p></div>
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Outstanding Due</p><p class="text-base font-bold text-amber-600">{{ currency(m.outstandingDue) }}</p></div>
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Total Cost (Expenses)</p><p class="text-base font-bold text-red-600">{{ currency(m.totalExpense) }}</p></div>
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Current Profit</p><p class="text-base font-bold" :class="m.currentProfit >= 0 ? 'text-brand-600' : 'text-red-600'">{{ currency(m.currentProfit) }}</p></div>
-        <div class="bg-white p-3"><p class="text-xs text-gray-400">Profit Margin</p><p class="text-base font-bold">{{ percent(m.profitMargin) }}</p></div>
+        <div v-for="c in summaryCells" :key="c.label" class="bg-white p-3">
+          <p class="text-xs text-gray-400">{{ c.label }}</p>
+          <p class="text-base font-bold" :class="c.cls">{{ c.value }}</p>
+        </div>
       </div>
     </section>
 
@@ -93,6 +116,8 @@ const vendorTotals = computed(() => ({
       </table>
     </section>
 
+    <!-- Confidential: cost & vendor payables only on the internal copy -->
+    <template v-if="confidential">
     <!-- Regular expenses -->
     <section class="mt-6">
       <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Regular Expenses</h2>
@@ -145,6 +170,7 @@ const vendorTotals = computed(() => ({
         </tfoot>
       </table>
     </section>
+    </template>
 
     <footer class="mt-8 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
       This is a system-generated statement from CINEASTA Agency Profit Tracker · {{ generatedOn }}

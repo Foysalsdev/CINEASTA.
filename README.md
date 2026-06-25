@@ -172,6 +172,10 @@ Apps Script API so the dashboard opens instantly and stays usable offline.
   and per-payment **Vendor Payment Voucher** receipts render as clean A4 pages
   via the browser's Print → Save as PDF (backgrounds/brand fills forced on,
   page margins and row-break handling tuned).
+- **PWA + desktop:** installable PWA with proper square 192/512 + maskable
+  icons and an offline service worker; responsive shell — mobile keeps the
+  bottom-nav, while large screens (lg+) get a left sidebar nav and a wider
+  centered content column.
 - **Phase 2d (next):** CSV import; cash-flow view; recurring expenses.
 - **Phase 3:** Advanced accounting, tax reports, multi-user, **Supabase** migration.
 
