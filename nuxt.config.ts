@@ -50,8 +50,8 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-title', content: 'CINEASTA' },
       ],
       link: [
-        { rel: 'icon', type: 'image/png', href: '/icons/Logo-4.png' },
-        { rel: 'apple-touch-icon', href: '/icons/Logo-4.png' },
+        { rel: 'icon', type: 'image/png', href: '/icons/icon-192.png' },
+        { rel: 'apple-touch-icon', href: '/icons/icon-192.png' },
       ],
     },
   },
@@ -65,12 +65,13 @@ export default defineNuxtConfig({
       theme_color: '#176a3a',
       background_color: '#ffffff',
       display: 'standalone',
-      orientation: 'portrait',
+      orientation: 'any',
       start_url: '/',
       scope: '/',
       icons: [
-        { src: '/icons/Logo-4.png', sizes: 'any', type: 'image/png', purpose: 'any' },
-        { src: '/icons/Logo-4.png', sizes: 'any', type: 'image/png', purpose: 'maskable' },
+        { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
     workbox: {

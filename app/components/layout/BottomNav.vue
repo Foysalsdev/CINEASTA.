@@ -17,7 +17,7 @@ const paths: Record<string, string> = {
 
 <template>
   <nav
-    class="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur"
+    class="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 backdrop-blur lg:hidden"
   >
     <ul class="mx-auto flex max-w-md items-stretch justify-between px-1">
       <li v-for="item in items" :key="item.to" class="flex-1">

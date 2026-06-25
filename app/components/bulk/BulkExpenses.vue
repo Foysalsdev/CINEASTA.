@@ -103,7 +103,7 @@ async function save() {
     <button type="button" class="btn-ghost w-full !bg-gray-100" @click="addRow">+ Add row</button>
 
     <!-- Sticky save bar -->
-    <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4">
+    <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4 lg:bottom-3 lg:pl-60">
       <div class="mx-auto max-w-md">
         <button class="btn-primary w-full shadow-lg shadow-brand-600/20" :disabled="saving || !valid.length" @click="save">
           {{ saving ? 'Saving…' : `Save ${valid.length} expense${valid.length === 1 ? '' : 's'} · ${currency(total)}` }}

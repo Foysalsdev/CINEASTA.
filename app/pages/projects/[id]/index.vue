@@ -139,7 +139,7 @@ const summary = computed(() => {
 
         <!-- Sticky, thumb-reachable scoped actions for this project.
              Right padding keeps clear of the global Quick-Add FAB. -->
-        <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4">
+        <div class="bottom-nav-offset fixed inset-x-0 z-30 mb-3 px-4 lg:bottom-3 lg:pl-60">
           <div class="mx-auto flex max-w-md gap-2 pr-[4.25rem]">
             <button class="btn-primary flex-1 shadow-lg shadow-brand-600/20" @click="adding = 'payment'">+ Payment</button>
             <button class="btn-ghost flex-1 !bg-white shadow-lg ring-1 ring-gray-200" @click="adding = 'choose'">+ Expense</button>
