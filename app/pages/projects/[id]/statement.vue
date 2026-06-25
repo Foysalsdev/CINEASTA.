@@ -4,8 +4,11 @@ definePageMeta({ layout: false })
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 const projects = useProjectsStore()
+const vendors = useVendorsStore()
 
-await useAsyncData(`statement-${id.value}`, () => projects.fetchOne(id.value).then(() => true))
+await useAsyncData(`statement-${id.value}`, () =>
+  Promise.all([projects.fetchOne(id.value), vendors.fetch()]).then(() => true),
+)
 const detail = computed(() => projects.current)
 
 useHead(() => ({
@@ -36,7 +39,7 @@ function printNow() {
     <StateBlock :loading="projects.detailLoading && !detail" :error="projects.error" :rows="6" @retry="projects.fetchOne(id)">
       <div v-if="detail" class="px-3 py-4 sm:px-6">
         <div class="mx-auto max-w-[800px] overflow-hidden rounded-2xl shadow-sm">
-          <ProjectStatement :detail="detail" />
+          <ProjectStatement :detail="detail" :vendors="vendors.items" />
         </div>
       </div>
     </StateBlock>

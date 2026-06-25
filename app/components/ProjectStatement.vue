@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { ProjectDetail } from '~/repositories'
-import { sumBy } from '~/utils/calculations'
+import type { Vendor } from '~/types'
+import { buildProjectVendors, sumBy } from '~/utils/calculations'
 
-const props = defineProps<{ detail: ProjectDetail }>()
+const props = withDefaults(defineProps<{ detail: ProjectDetail; vendors?: Vendor[] }>(), {
+  vendors: () => [],
+})
 const { currency, percent, date } = useFormat()
 
 const m = computed(() => props.detail.project.metrics)
@@ -12,13 +15,23 @@ const generatedOn = new Date().toLocaleDateString('en-GB', {
   year: 'numeric',
 })
 const paymentsTotal = computed(() => sumBy(props.detail.payments, (p) => p.amount))
-const expensesTotal = computed(() => sumBy(props.detail.expenses, (e) => e.amount))
+// Regular (non-vendor) expenses are itemised; vendor bills get their own section.
+const regularExpenses = computed(() => props.detail.expenses.filter((e) => !e.vendor_id))
+const regularTotal = computed(() => sumBy(regularExpenses.value, (e) => e.amount))
+const vendorLines = computed(() =>
+  buildProjectVendors(props.detail.project.id, props.vendors, props.detail.expenses, props.detail.vendorPayments),
+)
+const vendorTotals = computed(() => ({
+  bill: sumBy(vendorLines.value, (l) => l.totalBill),
+  paid: sumBy(vendorLines.value, (l) => l.paid),
+  due: sumBy(vendorLines.value, (l) => l.due),
+}))
 </script>
 
 <template>
   <article class="print-page mx-auto w-full max-w-[800px] bg-white p-8 text-gray-900">
     <!-- Brand header -->
-    <header class="flex items-start justify-between border-b-2 border-brand-600 pb-5">
+    <header class="print-keep flex items-start justify-between border-b-2 border-brand-600 pb-5">
       <div class="flex items-center gap-3">
         <BrandMark :size="56" />
         <p class="text-xs text-gray-400">Agency Profit Tracker</p>
@@ -44,7 +57,7 @@ const expensesTotal = computed(() => sumBy(props.detail.expenses, (e) => e.amoun
     </section>
 
     <!-- Financial summary -->
-    <section class="mt-6">
+    <section class="print-keep mt-6">
       <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Financial Summary</h2>
       <div class="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200 sm:grid-cols-3">
         <div class="bg-white p-3"><p class="text-xs text-gray-400">Contract Value</p><p class="text-base font-bold">{{ currency(detail.project.contract_value) }}</p></div>
@@ -80,9 +93,9 @@ const expensesTotal = computed(() => sumBy(props.detail.expenses, (e) => e.amoun
       </table>
     </section>
 
-    <!-- Expenses -->
+    <!-- Regular expenses -->
     <section class="mt-6">
-      <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Expenses / Cost</h2>
+      <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Regular Expenses</h2>
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -90,16 +103,45 @@ const expensesTotal = computed(() => sumBy(props.detail.expenses, (e) => e.amoun
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in detail.expenses" :key="e.id" class="border-b border-gray-100">
+          <tr v-for="e in regularExpenses" :key="e.id" class="border-b border-gray-100">
             <td class="py-1.5">{{ date(e.expense_date) }}</td>
             <td class="py-1.5">{{ e.category }}</td>
             <td class="py-1.5 capitalize text-gray-500">{{ e.type }}</td>
             <td class="py-1.5 text-right font-medium text-red-600">{{ currency(e.amount) }}</td>
           </tr>
-          <tr v-if="!detail.expenses.length"><td colspan="4" class="py-3 text-center text-gray-400">No expenses recorded.</td></tr>
+          <tr v-if="!regularExpenses.length"><td colspan="4" class="py-3 text-center text-gray-400">No regular expenses.</td></tr>
         </tbody>
         <tfoot>
-          <tr class="border-t-2 border-gray-200 font-bold"><td colspan="3" class="py-2">Total Cost</td><td class="py-2 text-right text-red-600">{{ currency(expensesTotal) }}</td></tr>
+          <tr class="border-t-2 border-gray-200 font-bold"><td colspan="3" class="py-2">Subtotal</td><td class="py-2 text-right text-red-600">{{ currency(regularTotal) }}</td></tr>
+        </tfoot>
+      </table>
+    </section>
+
+    <!-- Vendor bills & dues -->
+    <section v-if="vendorLines.length" class="mt-6">
+      <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Vendor Bills &amp; Dues</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+            <th class="py-1.5">Vendor</th><th class="py-1.5">Type</th><th class="py-1.5 text-right">Total Bill</th><th class="py-1.5 text-right">Paid</th><th class="py-1.5 text-right">Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="l in vendorLines" :key="l.vendor.id" class="border-b border-gray-100">
+            <td class="py-1.5 font-medium">{{ l.vendor.name }}</td>
+            <td class="py-1.5 text-gray-500">{{ l.category || '—' }}</td>
+            <td class="py-1.5 text-right">{{ currency(l.totalBill) }}</td>
+            <td class="py-1.5 text-right text-brand-600">{{ currency(l.paid) }}</td>
+            <td class="py-1.5 text-right font-medium" :class="l.due > 0 ? 'text-amber-600' : 'text-gray-400'">{{ currency(l.due) }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-gray-200 font-bold">
+            <td colspan="2" class="py-2">Totals</td>
+            <td class="py-2 text-right">{{ currency(vendorTotals.bill) }}</td>
+            <td class="py-2 text-right text-brand-600">{{ currency(vendorTotals.paid) }}</td>
+            <td class="py-2 text-right text-amber-600">{{ currency(vendorTotals.due) }}</td>
+          </tr>
         </tfoot>
       </table>
     </section>

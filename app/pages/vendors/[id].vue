@@ -88,9 +88,12 @@ async function onPaid() {
         <SectionCard v-else :title="`Payments (${detail.payments.length})`">
           <ul v-if="detail.payments.length" class="divide-y divide-gray-100">
             <li v-for="p in detail.payments" :key="p.id" class="py-2.5">
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between gap-2">
                 <div><p class="text-sm font-medium text-gray-800">{{ date(p.payment_date) }}</p><p class="text-xs text-gray-400 capitalize">{{ p.payment_method }}<span v-if="p.notes"> · {{ p.notes }}</span></p></div>
-                <span class="text-sm font-semibold text-brand-600">{{ currency(p.amount) }}</span>
+                <div class="flex shrink-0 items-center gap-3">
+                  <span class="text-sm font-semibold text-brand-600">{{ currency(p.amount) }}</span>
+                  <NuxtLink :to="`/vendors/${id}/receipt/${p.id}`" class="text-xs font-medium text-gray-400 underline-offset-2 hover:underline">Receipt</NuxtLink>
+                </div>
               </div>
               <AttachmentChips :items="p.attachments" />
             </li>

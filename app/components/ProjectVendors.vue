@@ -88,7 +88,7 @@ const existingVendorIds = computed(() => props.lines.map((l) => l.vendor.id))
         <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-400">Payment history</p>
         <ul v-if="line.payments.length" class="divide-y divide-gray-100">
           <li v-for="p in withRunningDue(line)" :key="p.id" class="py-2">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-2">
               <div>
                 <p class="text-sm font-medium text-gray-800">{{ currency(p.amount) }}</p>
                 <p class="text-xs text-gray-400 capitalize">{{ date(p.payment_date) }} · {{ p.payment_method }}</p>
@@ -96,6 +96,7 @@ const existingVendorIds = computed(() => props.lines.map((l) => l.vendor.id))
               <div class="text-right">
                 <p class="text-[11px] text-gray-400">Total {{ currency(line.totalBill) }}</p>
                 <p class="text-[11px]" :class="p.dueAfter > 0 ? 'text-amber-600' : 'text-brand-600'">Due {{ currency(p.dueAfter) }}</p>
+                <NuxtLink :to="`/vendors/${line.vendor.id}/receipt/${p.id}`" class="text-[11px] font-medium text-gray-400 underline-offset-2 hover:underline">Receipt</NuxtLink>
               </div>
             </div>
             <AttachmentChips :items="p.attachments" />
