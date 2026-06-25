@@ -34,7 +34,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'CINEASTA. — Agency Profit Tracker',
+      title: 'CINEASTA.',
       viewport:
         'width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1',
       meta: [
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'CINEASTA. — Agency Profit Tracker',
+      name: 'CINEASTA.',
       short_name: 'CINEASTA.',
       description: 'Know your revenue, expenses, profit and dues at a glance.',
       theme_color: '#176a3a',
