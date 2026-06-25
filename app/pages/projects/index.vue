@@ -3,7 +3,7 @@ const projects = useProjectsStore()
 const ui = useUiStore()
 const { currency, percent } = useFormat()
 
-useHead({ title: 'Projects — CINEASTA' })
+useHead({ title: 'Projects — CINEASTA.' })
 await useAsyncData('projects', () => projects.fetch().then(() => true))
 
 const query = ref('')

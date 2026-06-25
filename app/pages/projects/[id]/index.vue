@@ -16,7 +16,7 @@ await useAsyncData(`project-${id.value}`, () =>
 const detail = computed(() => projects.current)
 const m = computed(() => detail.value?.project.metrics)
 
-useHead(() => ({ title: `${detail.value?.project.project_name ?? 'Project'} — CINEASTA` }))
+useHead(() => ({ title: `${detail.value?.project.project_name ?? 'Project'} — CINEASTA.` }))
 
 const tab = ref<'overview' | 'payments' | 'expenses' | 'vendors'>('overview')
 

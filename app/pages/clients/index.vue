@@ -3,7 +3,7 @@ const clients = useClientsStore()
 const ui = useUiStore()
 const { date } = useFormat()
 
-useHead({ title: 'Clients — CINEASTA' })
+useHead({ title: 'Clients — CINEASTA.' })
 await useAsyncData('clients', () => clients.fetch().then(() => true))
 </script>
 
