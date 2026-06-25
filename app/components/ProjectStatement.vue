@@ -54,9 +54,7 @@ const vendorTotals = computed(() => ({
   <article class="print-page mx-auto w-full max-w-[800px] bg-white p-8 text-gray-900">
     <!-- Brand header -->
     <header class="print-keep flex items-start justify-between border-b-2 border-brand-600 pb-5">
-      <div>
-        <p class="text-2xl font-extrabold leading-none tracking-tight text-brand-700">CINEASTA<span class="text-brand-500">.</span></p>
-      </div>
+      <BrandMark :size="64" />
       <div class="text-right">
         <p class="text-lg font-bold">Project Statement</p>
         <p class="text-xs" :class="confidential ? 'font-semibold text-red-500' : 'text-gray-400'">
