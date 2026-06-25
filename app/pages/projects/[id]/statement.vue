@@ -6,8 +6,12 @@ const id = computed(() => String(route.params.id))
 const projects = useProjectsStore()
 const vendors = useVendorsStore()
 
-await useAsyncData(`statement-${id.value}`, () =>
-  Promise.all([projects.fetchOne(id.value), vendors.fetch()]).then(() => true),
+// Always pull live data so the printed PDF reflects the latest figures,
+// never a cached snapshot from an earlier visit.
+await useAsyncData(
+  `statement-${id.value}`,
+  () => Promise.all([projects.fetchOne(id.value), vendors.fetch(true)]).then(() => true),
+  { getCachedData: () => undefined },
 )
 const detail = computed(() => projects.current)
 
