@@ -83,7 +83,9 @@ const vendorTotals = computed(() => ({
     <!-- Financial summary -->
     <section class="print-keep mt-6">
       <h2 class="mb-2 text-sm font-bold uppercase tracking-wide text-gray-500">Financial Summary</h2>
-      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200 sm:grid-cols-3">
+      <!-- Columns follow the cell count so the client copy (2 cells) never
+           leaves an empty grey cell in the PDF. -->
+      <div class="grid gap-px overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200" :class="confidential ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'">
         <div v-for="c in summaryCells" :key="c.label" class="bg-white p-3">
           <p class="text-xs text-gray-400">{{ c.label }}</p>
           <p class="text-base font-bold" :class="c.cls">{{ c.value }}</p>

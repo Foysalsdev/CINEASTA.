@@ -60,10 +60,12 @@
     background: #fff !important;
   }
   /* Force backgrounds, brand fills and dividers to render in the PDF
-     (browsers drop them by default). */
+     (browsers drop them by default). No element should cast a shadow in the
+     PDF — the on-screen card shadow must not bleed onto the page edges. */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-shadow: none !important;
   }
   /* margin:0 removes the browser's auto header/footer (date, page title,
      URL, page number) from the PDF — those only render inside page margins.

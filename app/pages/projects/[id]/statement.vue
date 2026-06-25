@@ -28,7 +28,7 @@ function printNow() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 pb-10">
+  <div class="min-h-screen bg-gray-100 pb-10 print:min-h-0 print:bg-white print:pb-0">
     <!-- Toolbar (hidden when printing) -->
     <div class="no-print sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
       <NuxtLink :to="`/projects/${id}`" class="inline-flex items-center gap-1 text-sm font-medium text-gray-500">
@@ -55,8 +55,8 @@ function printNow() {
     </div>
 
     <StateBlock :loading="projects.detailLoading && !detail" :error="projects.error" :rows="6" @retry="projects.fetchOne(id)">
-      <div v-if="detail" class="px-3 py-4 sm:px-6">
-        <div class="mx-auto max-w-[800px] overflow-hidden rounded-2xl shadow-sm">
+      <div v-if="detail" class="px-3 py-4 sm:px-6 print:p-0">
+        <div class="mx-auto max-w-[800px] overflow-hidden rounded-2xl shadow-sm print:max-w-none print:overflow-visible print:rounded-none print:shadow-none">
           <ProjectStatement :detail="detail" :vendors="vendors.items" :mode="mode" />
         </div>
       </div>
