@@ -80,6 +80,11 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: '/',
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+      // Drop precaches from older deploys on activate so a stale service worker
+      // can never serve a broken shell (the "stuck spinner" after a redeploy).
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
       // Cache API GET responses (stale-while-revalidate) so the dashboard
       // opens instantly and stays usable offline.
       runtimeCaching: [
