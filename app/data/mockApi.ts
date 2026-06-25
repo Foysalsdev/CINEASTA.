@@ -4,13 +4,17 @@
 import type {
   ApiResponse,
   DashboardData,
+  NewAsset,
   NewClient,
   NewExpense,
   NewPayment,
   NewProject,
+  NewVendor,
+  NewVendorPayment,
   ProjectWithMetrics,
 } from '~/types'
 import {
+  buildVendorDetail,
   computeDashboardKpis,
   expenseBreakdown,
   monthlyTrend,
@@ -33,9 +37,7 @@ function ok<T>(data: T): ApiResponse<T> {
 function fail<T>(message: string): ApiResponse<T> {
   return { ok: false, data: null, error: message }
 }
-
-// Simulate a little network latency so loading states are visible/testable.
-function delay<T>(value: T, ms = 250): Promise<T> {
+function delay<T>(value: T, ms = 220): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
 }
 
@@ -48,7 +50,7 @@ function buildDashboard(): DashboardData {
     db.expenses,
   )
   return {
-    kpis: computeDashboardKpis(db.projects, db.clients, db.payments, db.expenses),
+    kpis: computeDashboardKpis(db.projects, db.clients, db.payments, db.expenses, db.vendorPayments),
     monthly: monthlyTrend(db.payments, db.expenses, 6),
     expenseBreakdown: expenseBreakdown(db.expenses),
     topProjectsByProfit: topProjectsByProfit(withMetrics, 5),
@@ -73,9 +75,7 @@ export async function mockApi<T>(
       case 'clients':
         return delay(ok(db.clients as T))
       case 'projects':
-        return delay(
-          ok(projectsWithMetrics(db.projects, db.clients, db.payments, db.expenses) as T),
-        )
+        return delay(ok(projectsWithMetrics(db.projects, db.clients, db.payments, db.expenses) as T))
       case 'project': {
         const project = db.projects.find((p) => p.id === params.id)
         if (!project) return delay(fail<T>('Project not found'))
@@ -92,18 +92,23 @@ export async function mockApi<T>(
         return delay(ok(db.payments as T))
       case 'expenses':
         return delay(ok(db.expenses as T))
+      case 'vendors':
+        return delay(ok(db.vendors as T))
+      case 'vendor': {
+        const vendor = db.vendors.find((v) => v.id === params.id)
+        if (!vendor) return delay(fail<T>('Vendor not found'))
+        return delay(ok(buildVendorDetail(vendor, db.expenses, db.vendorPayments) as T))
+      }
+      case 'assets':
+        return delay(ok(db.assets as T))
       case 'reports/monthly':
         return delay(ok(buildMonthlyReport(db.payments, db.expenses, 12) as T))
       case 'reports/project-profit':
-        return delay(
-          ok(buildProjectProfitReport(db.projects, db.clients, db.payments, db.expenses) as T),
-        )
+        return delay(ok(buildProjectProfitReport(db.projects, db.clients, db.payments, db.expenses) as T))
       case 'reports/client-revenue':
-        return delay(
-          ok(buildClientRevenueReport(db.projects, db.clients, db.payments, db.expenses) as T),
-        )
+        return delay(ok(buildClientRevenueReport(db.projects, db.clients, db.payments, db.expenses) as T))
       case 'reports/vendor-dues':
-        return delay(ok(buildVendorDuesReport(db.expenses) as T))
+        return delay(ok(buildVendorDuesReport(db.vendors, db.expenses, db.vendorPayments) as T))
       default:
         return delay(fail<T>(`Unknown GET route: ${path}`))
     }
@@ -146,11 +151,35 @@ export async function mockApi<T>(
     }
     case 'expense': {
       const p = body as NewExpense
-      if (!p?.project_id) return delay(fail<T>('A project is required'))
-      if (!(p.total_bill > 0)) return delay(fail<T>('Total bill must be greater than 0'))
-      const paid = Math.min(Math.max(0, p.paid || 0), p.total_bill)
-      const row = { ...p, paid, id: genId('e'), created_at: new Date().toISOString() }
+      if (p?.type === 'project' && !p.project_id) return delay(fail<T>('A project is required for a project expense'))
+      if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
+      const row = { ...p, id: genId('e'), created_at: new Date().toISOString() }
       db.expenses.push(row)
+      persist()
+      return delay(ok(row as T))
+    }
+    case 'vendor': {
+      const p = body as NewVendor
+      if (!p?.name?.trim()) return delay(fail<T>('Vendor name is required'))
+      const row = { ...p, id: genId('v'), created_at: new Date().toISOString() }
+      db.vendors.push(row)
+      persist()
+      return delay(ok(row as T))
+    }
+    case 'vendor-payment': {
+      const p = body as NewVendorPayment
+      if (!p?.vendor_id) return delay(fail<T>('A vendor is required'))
+      if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
+      const row = { ...p, id: genId('vp'), created_at: new Date().toISOString() }
+      db.vendorPayments.push(row)
+      persist()
+      return delay(ok(row as T))
+    }
+    case 'asset': {
+      const p = body as NewAsset
+      if (!p?.name?.trim()) return delay(fail<T>('Asset name is required'))
+      const row = { ...p, id: genId('a'), created_at: new Date().toISOString() }
+      db.assets.push(row)
       persist()
       return delay(ok(row as T))
     }

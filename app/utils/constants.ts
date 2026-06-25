@@ -1,4 +1,18 @@
-import type { PaymentMethod, ProjectStatus } from '~/types'
+import type { ExpenseType, PaymentMethod, ProjectStatus } from '~/types'
+
+export const EXPENSE_TYPES: { value: ExpenseType; label: string; hint: string }[] = [
+  { value: 'project', label: 'Project Expense', hint: 'Cost tied to a project' },
+  { value: 'internal', label: 'Internal Expense', hint: 'Office / overhead, no project' },
+  { value: 'asset', label: 'Asset Purchase', hint: 'Equipment you own' },
+  { value: 'maintenance', label: 'Maintenance', hint: 'Repair / upkeep' },
+]
+
+export const EXPENSE_TYPE_LABEL: Record<ExpenseType, string> = {
+  project: 'Project',
+  internal: 'Internal',
+  asset: 'Asset',
+  maintenance: 'Maintenance',
+}
 
 // Default category SUGGESTIONS for the expense typeahead. These are not
 // enforced — the user can type any category. Tuned for film production based on

@@ -3,22 +3,29 @@
 // reloads. This lets CINEASTA deploy to Vercel and be fully usable before the
 // Google Sheets / Apps Script backend is connected.
 import type {
+  Asset,
   Client,
   Expense,
   ExpenseCategory,
+  ExpenseType,
   Payment,
   PaymentMethod,
   Project,
   ProjectStatus,
+  Vendor,
+  VendorPayment,
 } from '~/types'
 
-const STORAGE_KEY = 'cineasta:mockdb:v3'
+const STORAGE_KEY = 'cineasta:mockdb:v4'
 
 export interface MockDB {
   clients: Client[]
   projects: Project[]
   payments: Payment[]
   expenses: Expense[]
+  vendors: Vendor[]
+  vendorPayments: VendorPayment[]
+  assets: Asset[]
 }
 
 function iso(daysAgo: number): string {
@@ -56,31 +63,58 @@ function seed(): MockDB {
     pay('pay7', 'p5', 40000, 'nagad', 30),
   ]
 
-  const exp = (
-    id: string,
-    project_id: string,
-    category: ExpenseCategory,
-    vendor: string,
-    total_bill: number,
-    paid: number,
-    daysAgo: number,
-  ): Expense => ({
-    id, project_id, category, vendor, total_bill, paid, expense_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
-  })
-  const expenses: Expense[] = [
-    exp('e1', 'p1', 'DOP & Camera Unit', 'Lenscraft Rentals', 80000, 80000, 130),
-    exp('e2', 'p1', 'Light & Gear', 'Spotlight House', 42000, 30000, 120),
-    exp('e3', 'p1', 'Transportation', 'Rahim Travels', 19000, 19000, 55),
-    exp('e4', 'p2', 'Directorial Team', 'Karim (Director)', 40000, 40000, 72),
-    exp('e5', 'p3', 'Artist & Casting', 'StarCast Agency', 60000, 45000, 100),
-    exp('e6', 'p3', 'Catering & Meal', 'Tasty Caterers', 28000, 28000, 96),
-    exp('e7', 'p4', 'Location & Studio Rental', 'Skyline Studio', 35000, 20000, 48),
-    exp('e8', 'p4', 'Post Production', 'CutRoom Edits', 25000, 0, 20),
-    exp('e9', 'p5', 'Prop & Wardrobe', 'Stage Props BD', 17000, 10000, 25),
-    exp('e10', 'p5', 'Generator & Fuel', 'PowerGen', 9000, 9000, 10),
+  const vendors: Vendor[] = [
+    { id: 'v1', name: 'Lenscraft Rentals', phone: '+8801911000001', email: 'rent@lenscraft.bd', notes: 'Camera & lens', created_at: iso(160) },
+    { id: 'v2', name: 'Spotlight House', phone: '+8801911000002', email: 'book@spotlight.bd', notes: 'Lights & gear', created_at: iso(140) },
+    { id: 'v3', name: 'StarCast Agency', phone: '+8801911000003', email: 'cast@starcast.bd', notes: 'Talent', created_at: iso(120) },
+    { id: 'v4', name: 'Skyline Studio', phone: '+8801911000004', email: 'hello@skyline.bd', notes: 'Studio floor', created_at: iso(100) },
   ]
 
-  return { clients, projects, payments, expenses }
+  const exp = (
+    id: string,
+    type: ExpenseType,
+    project_id: string,
+    vendor_id: string,
+    asset_id: string,
+    category: ExpenseCategory,
+    amount: number,
+    daysAgo: number,
+  ): Expense => ({
+    id, type, project_id, vendor_id, asset_id, category, amount, expense_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
+  })
+  const expenses: Expense[] = [
+    exp('e1', 'project', 'p1', 'v1', '', 'DOP & Camera Unit', 80000, 130),
+    exp('e2', 'project', 'p1', 'v2', '', 'Light & Gear', 42000, 120),
+    exp('e3', 'project', 'p1', '', '', 'Transportation', 19000, 55),
+    exp('e4', 'project', 'p2', '', '', 'Directorial Team', 40000, 72),
+    exp('e5', 'project', 'p3', 'v3', '', 'Artist & Casting', 60000, 100),
+    exp('e6', 'project', 'p3', '', '', 'Catering & Meal', 28000, 96),
+    exp('e7', 'project', 'p4', 'v4', '', 'Location & Studio Rental', 35000, 48),
+    exp('e8', 'project', 'p4', '', '', 'Post Production', 25000, 20),
+    exp('e9', 'project', 'p5', 'v2', '', 'Prop & Wardrobe', 17000, 25),
+    // Internal / asset / maintenance examples
+    exp('e10', 'internal', '', '', '', 'Office Rent', 35000, 28),
+    exp('e11', 'internal', '', '', '', 'Salary', 120000, 27),
+    exp('e12', 'asset', '', 'v1', 'a1', 'Camera Body', 280000, 200),
+    exp('e13', 'maintenance', '', '', 'a1', 'Sensor Cleaning', 6000, 18),
+  ]
+
+  const vp = (id: string, vendor_id: string, amount: number, method: PaymentMethod, daysAgo: number): VendorPayment => ({
+    id, vendor_id, amount, payment_method: method, payment_date: iso(daysAgo), notes: '', created_at: iso(daysAgo),
+  })
+  const vendorPayments: VendorPayment[] = [
+    vp('vp1', 'v1', 300000, 'bank', 150), // partially covers camera + rental
+    vp('vp2', 'v2', 30000, 'cash', 110),
+    vp('vp3', 'v3', 45000, 'bkash', 98),
+    // v4 unpaid → shows as due
+  ]
+
+  const assets: Asset[] = [
+    { id: 'a1', name: 'Sony FX6 Body', category: 'Camera', purchase_value: 280000, purchase_date: iso(200), notes: 'Primary cam', created_at: iso(200) },
+    { id: 'a2', name: 'DJI Mavic 3 Drone', category: 'Aerial', purchase_value: 220000, purchase_date: iso(120), notes: '', created_at: iso(120) },
+  ]
+
+  return { clients, projects, payments, expenses, vendors, vendorPayments, assets }
 }
 
 let cache: MockDB | null = null

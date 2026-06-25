@@ -13,12 +13,18 @@ every endpoint via a `path` query parameter and returns a uniform JSON envelope:
 2. Create four tabs (or let `setupSheets()` create them) with these exact
    header rows:
 
-| Sheet    | Columns (row 1)                                                              |
-| -------- | ---------------------------------------------------------------------------- |
-| Clients  | `id, name, phone, email, notes, created_at`                                  |
-| Projects | `id, client_id, project_name, contract_value, start_date, status, created_at`|
-| Payments | `id, project_id, amount, payment_method, payment_date, notes, created_at`    |
-| Expenses | `id, project_id, category, vendor, total_bill, paid, expense_date, notes, created_at` |
+| Sheet          | Columns (row 1)                                                              |
+| -------------- | ---------------------------------------------------------------------------- |
+| Clients        | `id, name, phone, email, notes, created_at`                                  |
+| Projects       | `id, client_id, project_name, contract_value, start_date, status, created_at`|
+| Payments       | `id, project_id, amount, payment_method, payment_date, notes, created_at`    |
+| Expenses       | `id, type, project_id, vendor_id, asset_id, category, amount, expense_date, notes, created_at` |
+| Vendors        | `id, name, phone, email, notes, created_at`                                  |
+| VendorPayments | `id, vendor_id, amount, payment_method, payment_date, notes, created_at`     |
+| Assets         | `id, name, category, purchase_value, purchase_date, notes, created_at`       |
+
+`Expenses.type` is one of `project · internal · asset · maintenance` (single
+expense system). `vendor_id` / `asset_id` are optional links.
 
 ## 2. Add the script
 
@@ -59,6 +65,9 @@ with built-in demo data — no backend required.
 | GET    | `project` (`&id=`)        | `{ project, payments[], expenses[] }`               |
 | GET    | `payments`                | `Payment[]`                                         |
 | GET    | `expenses`                | `Expense[]`                                         |
+| GET    | `vendors`                 | `Vendor[]`                                          |
+| GET    | `vendor` (`&id=`)         | `{ vendor, bills[], payments[], summary }`          |
+| GET    | `assets`                  | `Asset[]`                                           |
 | GET    | `reports/monthly`         | `MonthlyReportRow[]`                                |
 | GET    | `reports/project-profit`  | `ProjectProfitReportRow[]`                          |
 | GET    | `reports/client-revenue`  | `ClientRevenueReportRow[]`                          |
@@ -66,7 +75,10 @@ with built-in demo data — no backend required.
 | POST   | `client`                  | created `Client`                                    |
 | POST   | `project`                 | created `Project`                                   |
 | POST   | `payment`                 | created `Payment`                                   |
-| POST   | `expense`                 | created `Expense`                                   |
+| POST   | `expense`                 | created `Expense` (with `type`)                     |
+| POST   | `vendor`                  | created `Vendor`                                    |
+| POST   | `vendor-payment`          | created `VendorPayment` (money paid to a vendor)    |
+| POST   | `asset`                   | created `Asset`                                     |
 
 All POST bodies are JSON sent with `Content-Type: text/plain` (avoids a CORS
 preflight against Apps Script). Validation, logging and error handling are

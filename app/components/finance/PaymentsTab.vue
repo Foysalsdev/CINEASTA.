@@ -6,10 +6,7 @@ const projects = useProjectsStore()
 const ui = useUiStore()
 const { currency, date } = useFormat()
 
-useHead({ title: 'Payments — CINEASTA' })
-await useAsyncData('payments', () =>
-  Promise.all([payments.fetch(), projects.fetch()]).then(() => true),
-)
+onMounted(() => Promise.all([payments.fetch(), projects.fetch()]))
 
 const projectName = (id: string) =>
   projects.items.find((p) => p.id === id)?.project_name ?? 'Project'
@@ -19,19 +16,13 @@ const total = computed(() => sumBy(payments.items, (p) => p.amount))
 
 <template>
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl font-bold text-gray-900">Payments</h1>
-      <button class="btn-primary !py-1.5 !px-3 text-xs" @click="ui.openQuickAdd('payment')">+ Add</button>
-    </div>
-
     <KpiCard label="Total Received" :value="currency(total)" tone="positive" :sub="`${payments.items.length} payments`" />
-
     <StateBlock
       :loading="payments.loading && !payments.items.length"
       :error="payments.error"
       :empty="payments.loaded && !payments.items.length"
       empty-title="No payments yet"
-      empty-hint="Record a payment to see it here."
+      empty-hint="Record a client payment to see it here."
       @retry="payments.fetch(true)"
     >
       <template #empty-action>

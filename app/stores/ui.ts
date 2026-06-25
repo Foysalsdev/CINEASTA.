@@ -7,7 +7,14 @@ export interface Toast {
   message: string
 }
 
-export type QuickAddView = null | 'menu' | 'payment' | 'expense' | 'project' | 'client'
+export type QuickAddView =
+  | null
+  | 'menu'
+  | 'payment'
+  | 'expense'
+  | 'project'
+  | 'client'
+  | 'vendor'
 
 export const useUiStore = defineStore('ui', {
   state: () => ({

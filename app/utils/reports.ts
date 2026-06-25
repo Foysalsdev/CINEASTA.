@@ -7,9 +7,11 @@ import type {
   Payment,
   Project,
   ProjectProfitReportRow,
+  Vendor,
   VendorDuesReportRow,
+  VendorPayment,
 } from '~/types'
-import { monthlyTrend, num, projectsWithMetrics, round2 } from './calculations'
+import { buildVendorSummary, monthlyTrend, projectsWithMetrics, round2 } from './calculations'
 
 export function buildMonthlyReport(
   payments: Payment[],
@@ -69,23 +71,23 @@ export function buildClientRevenueReport(
 }
 
 /** "Kar koto baki" — outstanding payables grouped by vendor (who we owe). */
-export function buildVendorDuesReport(expenses: Expense[]): VendorDuesReportRow[] {
-  const byVendor = new Map<string, { bill: number; paid: number; count: number }>()
-  for (const e of expenses) {
-    const vendor = (e.vendor && String(e.vendor).trim()) || (e.category && String(e.category).trim()) || 'Unknown'
-    const agg = byVendor.get(vendor) ?? { bill: 0, paid: 0, count: 0 }
-    agg.bill += num(e.total_bill)
-    agg.paid += num(e.paid)
-    agg.count += 1
-    byVendor.set(vendor, agg)
-  }
-  return [...byVendor.entries()]
-    .map(([vendor, a]) => ({
-      vendor,
-      totalBill: round2(a.bill),
-      paid: round2(a.paid),
-      due: round2(Math.max(0, a.bill - a.paid)),
-      billCount: a.count,
-    }))
+export function buildVendorDuesReport(
+  vendors: Vendor[],
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): VendorDuesReportRow[] {
+  return vendors
+    .map((v) => {
+      const s = buildVendorSummary(v.id, expenses, vendorPayments)
+      return {
+        id: v.id,
+        vendor: v.name,
+        totalBill: s.totalBilled,
+        paid: s.totalPaid,
+        due: s.due,
+        billCount: s.billCount,
+      }
+    })
+    .filter((r) => r.totalBill > 0 || r.paid > 0)
     .sort((a, b) => b.due - a.due)
 }

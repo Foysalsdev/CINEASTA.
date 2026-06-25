@@ -22,6 +22,10 @@ import type {
   ProjectWithMetrics,
   RankedClient,
   RankedProject,
+  Vendor,
+  VendorDetail,
+  VendorPayment,
+  VendorSummary,
 } from '~/types'
 
 // --- Primitive helpers -----------------------------------------------------
@@ -72,19 +76,9 @@ export function totalReceived(payments: Payment[]): number {
   return sumBy(payments, (p) => p.amount)
 }
 
-/** Total Expense (cost) = Sum of the full bill across the project's expenses. */
+/** Total Expense (cost) = Sum of expense amounts. */
 export function totalExpense(expenses: Expense[]): number {
-  return sumBy(expenses, (e) => e.total_bill)
-}
-
-/** Total already paid to vendors. */
-export function totalExpensePaid(expenses: Expense[]): number {
-  return sumBy(expenses, (e) => e.paid)
-}
-
-/** Payable due = Sum of (total_bill − paid), never negative per bill. */
-export function totalExpenseDue(expenses: Expense[]): number {
-  return sumBy(expenses, (e) => Math.max(0, num(e.total_bill) - num(e.paid)))
+  return sumBy(expenses, (e) => e.amount)
 }
 
 /** Outstanding Due = Contract Value - Total Received (never negative). */
@@ -124,8 +118,6 @@ export function computeProjectMetrics(
   return {
     totalReceived: received,
     totalExpense: expense,
-    expensePaid: totalExpensePaid(expenses),
-    expenseDue: totalExpenseDue(expenses),
     outstandingDue: outstandingDue(project.contract_value, received),
     currentProfit: profit,
     expectedProfit: expectedProfit(project.contract_value, expense),
@@ -181,6 +173,7 @@ export function computeDashboardKpis(
   clients: Client[],
   payments: Payment[],
   expenses: Expense[],
+  vendorPayments: VendorPayment[] = [],
 ): DashboardKpis {
   const totalRevenue = totalReceived(payments)
   const totalExp = totalExpense(expenses)
@@ -196,7 +189,7 @@ export function computeDashboardKpis(
     totalExpense: totalExp,
     netProfit,
     outstandingDue: outstanding,
-    payableDue: totalExpenseDue(expenses),
+    payableDue: vendorPayableDue(expenses, vendorPayments),
     collectionRate: round2(safeDivide(totalRevenue, totalContract) * 100),
     averageProjectProfit: round2(safeDivide(totalProjectProfit, projects.length)),
     projectCount: projects.length,
@@ -222,7 +215,7 @@ export function monthlyTrend(
   }
   for (const e of expenses) {
     const key = monthKey(e.expense_date)
-    if (key) expenseByMonth.set(key, (expenseByMonth.get(key) ?? 0) + num(e.total_bill))
+    if (key) expenseByMonth.set(key, (expenseByMonth.get(key) ?? 0) + num(e.amount))
   }
 
   // Build a continuous window ending at the current month so the chart never
@@ -250,7 +243,7 @@ export function expenseBreakdown(expenses: Expense[]): CategoryBreakdownPoint[] 
   for (const e of expenses) {
     // Free-form categories: group by whatever was entered, blanks → Uncategorized.
     const cat = (e.category && String(e.category).trim()) || 'Uncategorized'
-    totals.set(cat, (totals.get(cat) ?? 0) + num(e.total_bill))
+    totals.set(cat, (totals.get(cat) ?? 0) + num(e.amount))
   }
   const grandTotal = round2([...totals.values()].reduce((a, b) => a + b, 0))
 
@@ -304,6 +297,70 @@ export function topClientsByRevenue(
 // =============================================================================
 // SORTING HELPER for "recent" activity
 // =============================================================================
+
+// =============================================================================
+// VENDORS — bills (expenses with a vendor) vs payments made → due
+// =============================================================================
+
+/** Amount billed by a vendor = Σ amount of expenses linked to that vendor. */
+export function vendorBilled(expenses: Expense[], vendorId: string): number {
+  return sumBy(
+    expenses.filter((e) => e.vendor_id === vendorId),
+    (e) => e.amount,
+  )
+}
+
+/** Amount paid to a vendor = Σ vendor payments for that vendor. */
+export function vendorPaid(vendorPayments: VendorPayment[], vendorId: string): number {
+  return sumBy(
+    vendorPayments.filter((vp) => vp.vendor_id === vendorId),
+    (vp) => vp.amount,
+  )
+}
+
+export function buildVendorSummary(
+  vendorId: string,
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): VendorSummary {
+  const bills = expenses.filter((e) => e.vendor_id === vendorId)
+  const pays = vendorPayments.filter((vp) => vp.vendor_id === vendorId)
+  const totalBilled = sumBy(bills, (e) => e.amount)
+  const totalPaid = sumBy(pays, (vp) => vp.amount)
+  return {
+    totalBilled,
+    totalPaid,
+    due: round2(totalBilled - totalPaid), // negative = advance/credit to vendor
+    billCount: bills.length,
+    paymentCount: pays.length,
+  }
+}
+
+export function buildVendorDetail(
+  vendor: Vendor,
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): VendorDetail {
+  return {
+    vendor,
+    bills: expenses.filter((e) => e.vendor_id === vendor.id),
+    payments: vendorPayments.filter((vp) => vp.vendor_id === vendor.id),
+    summary: buildVendorSummary(vendor.id, expenses, vendorPayments),
+  }
+}
+
+/** Total outstanding payables across all vendors (never negative overall). */
+export function vendorPayableDue(
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): number {
+  const billedWithVendor = sumBy(
+    expenses.filter((e) => e.vendor_id),
+    (e) => e.amount,
+  )
+  const paid = sumBy(vendorPayments, (vp) => vp.amount)
+  return round2(Math.max(0, billedWithVendor - paid))
+}
 
 export function recent<T extends { created_at: string }>(
   items: T[],

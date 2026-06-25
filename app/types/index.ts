@@ -53,16 +53,51 @@ export interface Payment {
   created_at: string
 }
 
-// --- Sheet: Expenses -------------------------------------------------------
-// An expense is a vendor BILL we track against: total_bill vs paid → due.
+// A single unified expense system. `type` distinguishes the real-world flavour;
+// vendor & project are optional depending on type.
+export type ExpenseType = 'project' | 'internal' | 'asset' | 'maintenance'
+
 export interface Expense {
   id: ID
-  project_id: ID
+  type: ExpenseType
+  project_id: ID // '' for internal / unassigned
+  vendor_id: ID // '' if no vendor
+  asset_id: ID // '' unless an Asset Purchase / Maintenance ties to an asset
   category: ExpenseCategory
-  vendor: string // who the bill is paid to ("kar") — e.g. a crew, house, person
-  total_bill: number
-  paid: number
+  amount: number
   expense_date: string
+  notes: string
+  created_at: string
+}
+
+// --- Sheet: Vendors --------------------------------------------------------
+export interface Vendor {
+  id: ID
+  name: string
+  phone: string
+  email: string
+  notes: string
+  created_at: string
+}
+
+// --- Sheet: VendorPayments (money paid TO a vendor) ------------------------
+export interface VendorPayment {
+  id: ID
+  vendor_id: ID
+  amount: number
+  payment_method: PaymentMethod
+  payment_date: string
+  notes: string
+  created_at: string
+}
+
+// --- Sheet: Assets (under "More") ------------------------------------------
+export interface Asset {
+  id: ID
+  name: string
+  category: string
+  purchase_value: number
+  purchase_date: string
   notes: string
   created_at: string
 }
@@ -73,9 +108,7 @@ export interface Expense {
 
 export interface ProjectMetrics {
   totalReceived: number
-  totalExpense: number // total cost = Σ total_bill
-  expensePaid: number // Σ paid to vendors
-  expenseDue: number // payable due = Σ (total_bill − paid)
+  totalExpense: number // project cost = Σ amount of this project's expenses
   outstandingDue: number // receivable due from client
   currentProfit: number
   expectedProfit: number
@@ -167,11 +200,27 @@ export interface ClientRevenueReportRow {
 
 // "Kar koto baki" — outstanding payables grouped by vendor.
 export interface VendorDuesReportRow {
+  id: ID
   vendor: string
   totalBill: number
   paid: number
   due: number
   billCount: number
+}
+
+export interface VendorSummary {
+  totalBilled: number
+  totalPaid: number
+  due: number
+  billCount: number
+  paymentCount: number
+}
+
+export interface VendorDetail {
+  vendor: Vendor
+  bills: Expense[]
+  payments: VendorPayment[]
+  summary: VendorSummary
 }
 
 // =============================================================================
@@ -189,3 +238,6 @@ export type NewClient = Omit<Client, 'id' | 'created_at'>
 export type NewProject = Omit<Project, 'id' | 'created_at'>
 export type NewPayment = Omit<Payment, 'id' | 'created_at'>
 export type NewExpense = Omit<Expense, 'id' | 'created_at'>
+export type NewVendor = Omit<Vendor, 'id' | 'created_at'>
+export type NewVendorPayment = Omit<VendorPayment, 'id' | 'created_at'>
+export type NewAsset = Omit<Asset, 'id' | 'created_at'>

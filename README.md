@@ -84,13 +84,27 @@ public/icons/                # PWA icons generated from the CINEASTA logo
 
 ## Screen map
 
+**Bottom nav = 5 tabs only** (never an ERP): **Home · Projects · Finance · Reports · More**.
+
 | Route            | Screen           | Highlights                                                        |
 | ---------------- | ---------------- | ----------------------------------------------------------------- |
 | `/login`         | Passcode login   | branded lock screen; financials are private behind a passcode      |
-| `/`              | Dashboard        | 6 KPI cards, monthly trend, expense donut, top projects/clients, recent activity, quick-add |
+| `/`              | Dashboard        | KPI cards (incl. receivable & payable due), trend, donut, rankings, quick-add |
 | `/projects`      | Projects         | searchable list with received/cost/profit, per-row Details + PDF actions |
 | `/projects/[id]` | Project detail   | summary grid + Overview / Payments / Expenses tabs, scoped quick-add |
 | `/projects/[id]/statement` | Statement | branded, printable statement → Print / Save as PDF (works on iPhone) |
+| `/finance`       | Finance          | sub-tabs: **Payments · Expenses · Vendors** (no separate nav items) |
+| `/vendors/[id]`  | Vendor detail    | tabs: **Bills · Payments · Summary** + Pay vendor                  |
+| `/more`          | More             | Assets, Bulk Entry (Expenses/Payments/Vendor Payments/CSV), Lock   |
+| `/assets`        | Assets           | equipment registry (under More)                                   |
+
+### Single expense system
+
+One unified Expense with a **type**: `Project Expense · Internal Expense ·
+Asset Purchase · Maintenance`. No separate modules for Vendor Bills, Vendor
+Payments, Internal Expense or Asset Maintenance — they live inside Finance /
+Vendors / More. **Vendor dues** are computed at vendor level (Σ bills − Σ vendor
+payments = due, "kar koto baki").
 | `/payments`      | Payments         | all payments, total received                                      |
 | `/expenses`      | Expenses         | all expenses, total spent                                         |
 | `/reports`       | Reports          | Monthly · Project Profit · Client Revenue tables                  |
@@ -140,8 +154,11 @@ Apps Script API so the dashboard opens instantly and stays usable offline.
 
 ## Roadmap
 
-- **Phase 1 (this MVP):** Dashboard, Clients, Projects, Payments, Expenses, Reports, PWA.
-- **Phase 2:** Invoice PDF, receipt upload, bank accounts, cash-flow tracking.
+- **Phase 1 (done):** 5-tab nav, Dashboard, Projects, Finance (Payments/Expenses/Vendors),
+  single Expense system with types, vendor dues, Assets, Reports (incl. Dues), PWA, login.
+- **Phase 2 (next):** Attachments / receipts → Google Drive on every transaction;
+  Bulk Entry (Bulk Expenses / Payments / Vendor Payments) + CSV import; cash-flow view;
+  recurring expenses.
 - **Phase 3:** Advanced accounting, tax reports, multi-user, **Supabase** migration.
 
 The repository pattern + transport layer mean swapping Sheets → Supabase is a

@@ -2,16 +2,16 @@
 const items = [
   { to: '/', label: 'Home', icon: 'home' },
   { to: '/projects', label: 'Projects', icon: 'projects' },
-  { to: '/payments', label: 'Payments', icon: 'payments' },
-  { to: '/expenses', label: 'Expenses', icon: 'expenses' },
+  { to: '/finance', label: 'Finance', icon: 'finance' },
   { to: '/reports', label: 'Reports', icon: 'reports' },
+  { to: '/more', label: 'More', icon: 'more' },
 ]
 const paths: Record<string, string> = {
   home: 'M3 10.5 12 3l9 7.5M5 9v11h14V9',
   projects: 'M4 7h16M4 12h16M4 17h10',
-  payments: 'M3 7h18v10H3zM3 11h18',
-  expenses: 'M12 3v18M7 8h7a3 3 0 0 1 0 6H8a3 3 0 0 0 0 6h8',
+  finance: 'M3 7h18v10H3zM3 11h18M7 15h3',
   reports: 'M4 19V5m5 14V9m5 10v-6m5 6V7',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
 }
 </script>
 

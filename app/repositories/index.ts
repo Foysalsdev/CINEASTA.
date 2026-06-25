@@ -2,20 +2,27 @@
 // Stores depend on these typed methods, not on raw paths/transport. Swapping
 // the data source (mock ↔ Apps Script ↔ future Supabase) happens here + useApi.
 import type {
+  Asset,
   Client,
   ClientRevenueReportRow,
   DashboardData,
   Expense,
   MonthlyReportRow,
+  NewAsset,
   NewClient,
   NewExpense,
   NewPayment,
   NewProject,
+  NewVendor,
+  NewVendorPayment,
   Payment,
   Project,
   ProjectProfitReportRow,
   ProjectWithMetrics,
+  Vendor,
+  VendorDetail,
   VendorDuesReportRow,
+  VendorPayment,
 } from '~/types'
 
 export interface ProjectDetail {
@@ -58,6 +65,18 @@ export function useRepositories() {
     expenses: {
       list: () => api.get<Expense[]>('expenses'),
       create: (payload: NewExpense) => api.post<Expense>('expense', payload),
+    },
+
+    vendors: {
+      list: () => api.get<Vendor[]>('vendors'),
+      get: (id: string) => api.get<VendorDetail>('vendor', { id }),
+      create: (payload: NewVendor) => api.post<Vendor>('vendor', payload),
+      pay: (payload: NewVendorPayment) => api.post<VendorPayment>('vendor-payment', payload),
+    },
+
+    assets: {
+      list: () => api.get<Asset[]>('assets'),
+      create: (payload: NewAsset) => api.post<Asset>('asset', payload),
     },
 
     reports: {

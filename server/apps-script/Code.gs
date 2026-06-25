@@ -31,7 +31,10 @@ var SHEETS = {
   Clients: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
   Projects: ['id', 'client_id', 'project_name', 'contract_value', 'start_date', 'status', 'created_at'],
   Payments: ['id', 'project_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
-  Expenses: ['id', 'project_id', 'category', 'vendor', 'total_bill', 'paid', 'expense_date', 'notes', 'created_at']
+  Expenses: ['id', 'type', 'project_id', 'vendor_id', 'asset_id', 'category', 'amount', 'expense_date', 'notes', 'created_at'],
+  Vendors: ['id', 'name', 'phone', 'email', 'notes', 'created_at'],
+  VendorPayments: ['id', 'vendor_id', 'amount', 'payment_method', 'payment_date', 'notes', 'created_at'],
+  Assets: ['id', 'name', 'category', 'purchase_value', 'purchase_date', 'notes', 'created_at']
 };
 
 // Expense categories are free-form; this list is only reference documentation.
@@ -78,6 +81,9 @@ function route(method, path, params, body) {
       case 'project': return projectDetail(params.id);
       case 'payments': return readAll('Payments');
       case 'expenses': return readAll('Expenses');
+      case 'vendors': return readAll('Vendors');
+      case 'vendor': return vendorDetail(params.id);
+      case 'assets': return readAll('Assets');
       case 'reports/monthly': return buildMonthlyReport(12);
       case 'reports/project-profit': return buildProjectProfitReport();
       case 'reports/client-revenue': return buildClientRevenueReport();
@@ -91,6 +97,9 @@ function route(method, path, params, body) {
     case 'project': return createProject(body);
     case 'payment': return createPayment(body);
     case 'expense': return createExpense(body);
+    case 'vendor': return createVendor(body);
+    case 'vendor-payment': return createVendorPayment(body);
+    case 'asset': return createAsset(body);
     default: throw new Error('Unknown POST route: ' + path);
   }
 }
@@ -166,16 +175,12 @@ function monthLabel_(key) {
 
 function computeMetrics_(project, payments, expenses) {
   var received = sumBy_(payments, function (p) { return p.amount; });
-  var expense = sumBy_(expenses, function (x) { return x.total_bill; });
-  var paid = sumBy_(expenses, function (x) { return x.paid; });
-  var expenseDue = sumBy_(expenses, function (x) { return Math.max(0, num_(x.total_bill) - num_(x.paid)); });
+  var expense = sumBy_(expenses, function (x) { return x.amount; });
   var profit = round2_(received - expense);
   var contract = num_(project.contract_value);
   return {
     totalReceived: received,
     totalExpense: expense,
-    expensePaid: paid,
-    expenseDue: expenseDue,
     outstandingDue: round2_(Math.max(0, contract - received)),
     currentProfit: profit,
     expectedProfit: round2_(contract - expense),
@@ -236,9 +241,12 @@ function buildDashboard() {
   var expenses = readAll('Expenses');
   var withMetrics = projectsWithMetrics();
 
+  var vendorPayments = readAll('VendorPayments');
   var totalRevenue = sumBy_(payments, function (p) { return p.amount; });
-  var totalExpense = sumBy_(expenses, function (x) { return x.total_bill; });
-  var payableDue = sumBy_(expenses, function (x) { return Math.max(0, num_(x.total_bill) - num_(x.paid)); });
+  var totalExpense = sumBy_(expenses, function (x) { return x.amount; });
+  var billedWithVendor = sumBy_(expenses.filter(function (x) { return x.vendor_id; }), function (x) { return x.amount; });
+  var paidToVendors = sumBy_(vendorPayments, function (x) { return x.amount; });
+  var payableDue = round2_(Math.max(0, billedWithVendor - paidToVendors));
   var totalContract = sumBy_(projects, function (p) { return p.contract_value; });
   var totalProjectProfit = sumBy_(withMetrics, function (p) { return p.metrics.currentProfit; });
 
@@ -266,7 +274,7 @@ function buildDashboard() {
 function monthlyTrend_(payments, expenses, monthsBack) {
   var rev = {}, exp = {};
   payments.forEach(function (p) { var k = monthKey_(p.payment_date); if (k) rev[k] = (rev[k] || 0) + num_(p.amount); });
-  expenses.forEach(function (x) { var k = monthKey_(x.expense_date); if (k) exp[k] = (exp[k] || 0) + num_(x.total_bill); });
+  expenses.forEach(function (x) { var k = monthKey_(x.expense_date); if (k) exp[k] = (exp[k] || 0) + num_(x.amount); });
   var keys = [], now = new Date();
   for (var i = monthsBack - 1; i >= 0; i--) {
     var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -282,7 +290,7 @@ function expenseBreakdown_(expenses) {
   var totals = {};
   expenses.forEach(function (x) {
     var cat = (x.category && String(x.category).trim()) || 'Uncategorized';
-    totals[cat] = (totals[cat] || 0) + num_(x.total_bill);
+    totals[cat] = (totals[cat] || 0) + num_(x.amount);
   });
   var grand = 0; Object.keys(totals).forEach(function (k) { grand += totals[k]; });
   return Object.keys(totals).map(function (cat) {
@@ -332,21 +340,33 @@ function buildClientRevenueReport() {
   }).sort(function (a, b) { return b.revenue - a.revenue; });
 }
 
+function vendorSummary_(vendorId, expenses, vendorPayments) {
+  var bills = expenses.filter(function (e) { return e.vendor_id === vendorId; });
+  var pays = vendorPayments.filter(function (vp) { return vp.vendor_id === vendorId; });
+  var totalBilled = sumBy_(bills, function (e) { return e.amount; });
+  var totalPaid = sumBy_(pays, function (vp) { return vp.amount; });
+  return { totalBilled: totalBilled, totalPaid: totalPaid, due: round2_(totalBilled - totalPaid), billCount: bills.length, paymentCount: pays.length, bills: bills, payments: pays };
+}
+
+function vendorDetail(id) {
+  if (!id) throw new Error('Vendor id is required');
+  var vendors = readAll('Vendors');
+  var vendor = null;
+  for (var i = 0; i < vendors.length; i++) if (vendors[i].id === id) { vendor = vendors[i]; break; }
+  if (!vendor) throw new Error('Vendor not found');
+  var s = vendorSummary_(id, readAll('Expenses'), readAll('VendorPayments'));
+  return { vendor: vendor, bills: s.bills, payments: s.payments, summary: { totalBilled: s.totalBilled, totalPaid: s.totalPaid, due: s.due, billCount: s.billCount, paymentCount: s.paymentCount } };
+}
+
 function buildVendorDuesReport() {
+  var vendors = readAll('Vendors');
   var expenses = readAll('Expenses');
-  var byVendor = {};
-  expenses.forEach(function (e) {
-    var vendor = (e.vendor && String(e.vendor).trim()) || (e.category && String(e.category).trim()) || 'Unknown';
-    var a = byVendor[vendor] || { bill: 0, paid: 0, count: 0 };
-    a.bill += num_(e.total_bill);
-    a.paid += num_(e.paid);
-    a.count += 1;
-    byVendor[vendor] = a;
-  });
-  return Object.keys(byVendor).map(function (vendor) {
-    var a = byVendor[vendor];
-    return { vendor: vendor, totalBill: round2_(a.bill), paid: round2_(a.paid), due: round2_(Math.max(0, a.bill - a.paid)), billCount: a.count };
-  }).sort(function (x, y) { return y.due - x.due; });
+  var vendorPayments = readAll('VendorPayments');
+  return vendors.map(function (v) {
+    var s = vendorSummary_(v.id, expenses, vendorPayments);
+    return { id: v.id, vendor: v.name, totalBill: s.totalBilled, paid: s.totalPaid, due: s.due, billCount: s.billCount };
+  }).filter(function (r) { return r.totalBill > 0 || r.paid > 0; })
+    .sort(function (x, y) { return y.due - x.due; });
 }
 
 // ---- Create operations (with validation) ------------------------------------
@@ -409,23 +429,60 @@ function createPayment(body) {
 }
 
 function createExpense(body) {
-  requireText_(body.project_id, 'Project');
-  // Categories and vendors are free-form (variable production line items).
-  var category = (body.category && String(body.category).trim()) || 'Uncategorized';
-  var totalBill = requirePositive_(body.total_bill, 'Total bill');
-  var paid = Math.min(Math.max(0, num_(body.paid)), totalBill);
+  var type = body.type || 'project';
+  if (type === 'project') requireText_(body.project_id, 'Project');
   var row = {
     id: genId_('e'),
-    project_id: body.project_id,
-    category: category,
-    vendor: (body.vendor && String(body.vendor).trim()) || '',
-    total_bill: totalBill,
-    paid: paid,
+    type: type,
+    project_id: body.project_id || '',
+    vendor_id: body.vendor_id || '',
+    asset_id: body.asset_id || '',
+    category: (body.category && String(body.category).trim()) || 'Uncategorized',
+    amount: requirePositive_(body.amount, 'Amount'),
     expense_date: body.expense_date || today_(),
     notes: body.notes || '',
     created_at: nowIso_()
   };
   return appendRow_('Expenses', row);
+}
+
+function createVendor(body) {
+  var row = {
+    id: genId_('v'),
+    name: requireText_(body.name, 'Vendor name'),
+    phone: body.phone || '',
+    email: body.email || '',
+    notes: body.notes || '',
+    created_at: nowIso_()
+  };
+  return appendRow_('Vendors', row);
+}
+
+function createVendorPayment(body) {
+  requireText_(body.vendor_id, 'Vendor');
+  var row = {
+    id: genId_('vp'),
+    vendor_id: body.vendor_id,
+    amount: requirePositive_(body.amount, 'Amount'),
+    payment_method: body.payment_method || 'other',
+    payment_date: body.payment_date || today_(),
+    notes: body.notes || '',
+    created_at: nowIso_()
+  };
+  return appendRow_('VendorPayments', row);
+}
+
+function createAsset(body) {
+  var row = {
+    id: genId_('a'),
+    name: requireText_(body.name, 'Asset name'),
+    category: body.category || '',
+    purchase_value: num_(body.purchase_value),
+    purchase_date: body.purchase_date || today_(),
+    notes: body.notes || '',
+    created_at: nowIso_()
+  };
+  return appendRow_('Assets', row);
 }
 
 // ---- One-time setup helper --------------------------------------------------

@@ -108,9 +108,9 @@ const topClients = computed(
             <li v-for="e in d.recentExpenses" :key="e.id" class="flex items-center justify-between py-2.5">
               <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-gray-800">{{ projectName(e.project_id) }}</p>
-                <p class="text-xs text-gray-400">{{ date(e.expense_date) }} · {{ e.vendor || e.category }}</p>
+                <p class="text-xs text-gray-400">{{ date(e.expense_date) }} · {{ e.category }}</p>
               </div>
-              <span class="text-sm font-semibold text-red-600">-{{ currency(e.total_bill) }}</span>
+              <span class="text-sm font-semibold text-red-600">-{{ currency(e.amount) }}</span>
             </li>
           </ul>
           <p v-else class="py-4 text-center text-sm text-gray-400">No expenses yet.</p>
