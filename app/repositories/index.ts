@@ -56,6 +56,8 @@ export function useRepositories() {
       list: () => api.get<ProjectWithMetrics[]>('projects'),
       get: (id: string) => api.get<ProjectDetail>('project', { id }),
       create: (payload: NewProject) => api.post<Project>('project', payload),
+      update: (id: string, patch: Partial<NewProject>) =>
+        api.post<Project>('project-update', { id, ...patch }),
     },
 
     payments: {

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { buildProjectVendors } from '~/utils/calculations'
+import { PROJECT_STATUSES, STATUS_STYLES } from '~/utils/constants'
+import type { ProjectStatus } from '~/types'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
@@ -7,6 +9,7 @@ const id = computed(() => String(route.params.id))
 const projects = useProjectsStore()
 const vendors = useVendorsStore()
 const dashboard = useDashboardStore()
+const ui = useUiStore()
 const { currency, percent, date } = useFormat()
 
 await useAsyncData(`project-${id.value}`, () =>
@@ -31,6 +34,20 @@ const adding = ref<null | 'payment' | 'choose' | 'expense' | 'vendor'>(null)
 async function onSaved() {
   adding.value = null
   await Promise.all([projects.fetchOne(id.value), projects.fetch(true), dashboard.fetch(true)])
+}
+
+const statusSaving = ref(false)
+async function onStatusChange(status: ProjectStatus) {
+  if (!detail.value || status === detail.value.project.status) return
+  statusSaving.value = true
+  try {
+    await projects.updateStatus(id.value, status)
+    ui.toast('Status updated')
+  } catch (e) {
+    ui.toast(e instanceof Error ? e.message : 'Failed to update status', 'error')
+  } finally {
+    statusSaving.value = false
+  }
 }
 
 const summary = computed(() => {
@@ -60,7 +77,15 @@ const summary = computed(() => {
             <h1 class="text-xl font-bold text-gray-900">{{ detail.project.project_name }}</h1>
             <p class="text-sm text-gray-400">{{ detail.project.client_name }} · started {{ date(detail.project.start_date) }}</p>
           </div>
-          <StatusBadge :status="detail.project.status" />
+          <select
+            :value="detail.project.status"
+            class="shrink-0 appearance-none rounded-full px-2 py-0.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
+            :class="STATUS_STYLES[detail.project.status]"
+            :disabled="statusSaving"
+            @change="onStatusChange(($event.target as HTMLSelectElement).value as ProjectStatus)"
+          >
+            <option v-for="s in PROJECT_STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+          </select>
         </div>
 
         <!-- Summary grid -->

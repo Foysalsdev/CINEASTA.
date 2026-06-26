@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { NewProject, Project, ProjectWithMetrics } from '~/types'
+import type { NewProject, Project, ProjectStatus, ProjectWithMetrics } from '~/types'
 import type { ProjectDetail } from '~/repositories'
 
 export const useProjectsStore = defineStore('projects', {
@@ -44,6 +44,11 @@ export const useProjectsStore = defineStore('projects', {
       const created = await useRepositories().projects.create(payload)
       await this.fetch(true)
       return created
+    },
+    async updateStatus(id: string, status: ProjectStatus) {
+      await useRepositories().projects.update(id, { status })
+      await this.fetch(true)
+      if (this.current?.project.id === id) await this.fetchOne(id)
     },
   },
 })
