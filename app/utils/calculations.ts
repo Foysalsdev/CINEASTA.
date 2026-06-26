@@ -449,6 +449,19 @@ export function vendorPayableDue(
   return round2(Math.max(0, billedWithVendor - paid))
 }
 
+/** Outstanding payable to vendors for ONE project (used to decide auto-completion). */
+export function projectVendorDue(
+  projectId: string,
+  expenses: Expense[],
+  vendorPayments: VendorPayment[],
+): number {
+  const bills = expenses.filter((e) => e.project_id === projectId && e.vendor_id)
+  const billIds = new Set(bills.map((b) => b.id))
+  const billed = sumBy(bills, (b) => b.amount)
+  const paid = sumBy(vendorPayments.filter((vp) => billIds.has(vp.bill_id)), (vp) => vp.amount)
+  return round2(Math.max(0, billed - paid))
+}
+
 export function recent<T extends { created_at: string }>(
   items: T[],
   dateField: keyof T,

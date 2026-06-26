@@ -103,6 +103,7 @@ function route(method, path, params, body) {
     case 'payment': return createPayment(body);
     case 'expense': return createExpense(body);
     case 'expense-update': return updateExpense(body);
+    case 'project-update': return updateProject(body);
     case 'vendor': return createVendor(body);
     case 'vendor-payment': return createVendorPayment(body);
     case 'asset': return createAsset(body);
@@ -201,6 +202,41 @@ function computeMetrics_(project, payments, expenses) {
     profitMargin: round2_(safeDivide_(profit, received) * 100),
     collectionRate: round2_(safeDivide_(received, contract) * 100)
   };
+}
+
+function projectVendorDue_(projectId, expenses, vendorPayments) {
+  var bills = expenses.filter(function (e) { return e.project_id === projectId && e.vendor_id; });
+  var billIds = {};
+  bills.forEach(function (b) { billIds[b.id] = true; });
+  var billed = sumBy_(bills, function (b) { return b.amount; });
+  var paid = sumBy_(vendorPayments.filter(function (vp) { return billIds[vp.bill_id]; }), function (vp) { return vp.amount; });
+  return round2_(Math.max(0, billed - paid));
+}
+
+// Auto-completes an 'active' project once the client has paid in full AND
+// every vendor bill on it is settled. Any other status (on_hold, cancelled,
+// or a status the user already set by hand) is left untouched — status stays
+// editable afterwards via project-update.
+function autoCompleteIfSettled_(projectId) {
+  if (!projectId) return;
+  var sh = sheet_('Projects');
+  var values = sh.getDataRange().getValues();
+  var headers = values[0];
+  var idCol = headers.indexOf('id');
+  var statusCol = headers.indexOf('status');
+  var contractCol = headers.indexOf('contract_value');
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][idCol]) !== String(projectId)) continue;
+    if (values[r][statusCol] !== 'active') return;
+    var payments = readAll('Payments').filter(function (p) { return p.project_id === projectId; });
+    var expenses = readAll('Expenses').filter(function (x) { return x.project_id === projectId; });
+    var vendorPayments = readAll('VendorPayments');
+    var received = sumBy_(payments, function (p) { return p.amount; });
+    var due = round2_(Math.max(0, num_(values[r][contractCol]) - received));
+    var vendorDue = projectVendorDue_(projectId, expenses, vendorPayments);
+    if (due <= 0 && vendorDue <= 0) sh.getRange(r + 1, statusCol + 1).setValue('completed');
+    return;
+  }
 }
 
 function indexByProject_(rows) {
@@ -452,7 +488,9 @@ function createPayment(body) {
     attachments: body.attachments || [],
     created_at: nowIso_()
   };
-  return appendRow_('Payments', row);
+  var saved = appendRow_('Payments', row);
+  autoCompleteIfSettled_(body.project_id);
+  return saved;
 }
 
 function createExpense(body) {
@@ -513,6 +551,32 @@ function updateExpense(body) {
   throw new Error('Expense not found');
 }
 
+// Update editable fields of an existing project — used for the status
+// dropdown (and any other field) on the project detail page.
+function updateProject(body) {
+  requireText_(body.id, 'Project id');
+  var sh = sheet_('Projects');
+  var values = sh.getDataRange().getValues();
+  var headers = values[0];
+  var idCol = headers.indexOf('id');
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][idCol]) !== String(body.id)) continue;
+    var editable = ['client_id', 'project_name', 'contract_value', 'start_date', 'status'];
+    for (var k = 0; k < editable.length; k++) {
+      var key = editable[k];
+      if (body[key] === undefined) continue;
+      var col = headers.indexOf(key);
+      if (col < 0) continue;
+      values[r][col] = key === 'contract_value' ? num_(body[key]) : body[key];
+    }
+    sh.getRange(r + 1, 1, 1, headers.length).setValues([values[r]]);
+    var obj = {};
+    for (var c = 0; c < headers.length; c++) obj[headers[c]] = values[r][c];
+    return obj;
+  }
+  throw new Error('Project not found');
+}
+
 function createVendorPayment(body) {
   requireText_(body.vendor_id, 'Vendor');
   var row = {
@@ -526,7 +590,12 @@ function createVendorPayment(body) {
     attachments: body.attachments || [],
     created_at: nowIso_()
   };
-  return appendRow_('VendorPayments', row);
+  var saved = appendRow_('VendorPayments', row);
+  if (row.bill_id) {
+    var bills = readAll('Expenses').filter(function (e) { return e.id === row.bill_id; });
+    if (bills[0] && bills[0].project_id) autoCompleteIfSettled_(bills[0].project_id);
+  }
+  return saved;
 }
 
 // ---- Receipt upload → Google Drive ------------------------------------------

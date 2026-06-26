@@ -18,10 +18,13 @@ import {
   computeDashboardKpis,
   expenseBreakdown,
   monthlyTrend,
+  outstandingDue,
   projectsWithMetrics,
+  projectVendorDue,
   recent,
   topClientsByRevenue,
   topProjectsByProfit,
+  totalReceived,
 } from '~/utils/calculations'
 import {
   buildClientRevenueReport,
@@ -29,7 +32,22 @@ import {
   buildProjectProfitReport,
   buildVendorDuesReport,
 } from '~/utils/reports'
-import { genId, loadDB, persist } from './mockData'
+import { genId, loadDB, persist, type MockDB } from './mockData'
+
+// A project auto-completes once the client has paid in full AND every vendor
+// bill on it is settled. Only flips 'active' → 'completed' — anything the
+// user has set manually (on_hold, cancelled, or completed/active themselves)
+// is left alone, and the status field stays editable afterwards.
+function autoCompleteIfSettled(db: MockDB, projectId: string): void {
+  if (!projectId) return
+  const project = db.projects.find((p) => p.id === projectId)
+  if (!project || project.status !== 'active') return
+  const payments = db.payments.filter((p) => p.project_id === projectId)
+  const expenses = db.expenses.filter((e) => e.project_id === projectId)
+  const due = outstandingDue(project.contract_value, totalReceived(payments))
+  const vendorDue = projectVendorDue(projectId, expenses, db.vendorPayments)
+  if (due <= 0 && vendorDue <= 0) project.status = 'completed'
+}
 
 function ok<T>(data: T): ApiResponse<T> {
   return { ok: true, data, error: null }
@@ -150,6 +168,7 @@ export async function mockApi<T>(
       if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
       const row = { ...p, id: genId('pay'), created_at: new Date().toISOString() }
       db.payments.push(row)
+      autoCompleteIfSettled(db, p.project_id)
       persist()
       return delay(ok(row as T))
     }
@@ -159,6 +178,18 @@ export async function mockApi<T>(
       if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
       const row = { ...p, id: genId('e'), created_at: new Date().toISOString() }
       db.expenses.push(row)
+      persist()
+      return delay(ok(row as T))
+    }
+    case 'project-update': {
+      const p = body as { id?: string } & Partial<NewProject>
+      const row = db.projects.find((pr) => pr.id === p?.id)
+      if (!row) return delay(fail<T>('Project not found'))
+      if (p.client_id !== undefined) row.client_id = p.client_id
+      if (p.project_name !== undefined) row.project_name = p.project_name
+      if (p.contract_value !== undefined) row.contract_value = Number(p.contract_value) || 0
+      if (p.start_date !== undefined) row.start_date = p.start_date
+      if (p.status !== undefined) row.status = p.status
       persist()
       return delay(ok(row as T))
     }
@@ -187,6 +218,8 @@ export async function mockApi<T>(
       if (!(p.amount > 0)) return delay(fail<T>('Amount must be greater than 0'))
       const row = { ...p, id: genId('vp'), created_at: new Date().toISOString() }
       db.vendorPayments.push(row)
+      const bill = db.expenses.find((e) => e.id === p.bill_id)
+      if (bill?.project_id) autoCompleteIfSettled(db, bill.project_id)
       persist()
       return delay(ok(row as T))
     }
