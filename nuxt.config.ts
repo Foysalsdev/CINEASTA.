@@ -60,7 +60,10 @@ export default defineNuxtConfig({
   },
 
   pwa: {
-    registerType: 'autoUpdate',
+    // 'prompt' (not 'autoUpdate') so a new deploy doesn't silently swap the
+    // app shell under the user — UpdatePrompt.vue shows a banner and only
+    // activates the new service worker once the user taps Reload.
+    registerType: 'prompt',
     manifest: {
       name: 'CINEASTA.',
       short_name: 'CINEASTA.',
@@ -83,8 +86,11 @@ export default defineNuxtConfig({
       // Drop precaches from older deploys on activate so a stale service worker
       // can never serve a broken shell (the "stuck spinner" after a redeploy).
       cleanupOutdatedCaches: true,
-      clientsClaim: true,
-      skipWaiting: true,
+      // false: a new SW waits until the user confirms the UpdatePrompt
+      // banner (registerType 'prompt' above) instead of taking over an
+      // already-open tab mid-session.
+      clientsClaim: false,
+      skipWaiting: false,
       // Cache API GET responses (stale-while-revalidate) so the dashboard
       // opens instantly and stays usable offline.
       runtimeCaching: [

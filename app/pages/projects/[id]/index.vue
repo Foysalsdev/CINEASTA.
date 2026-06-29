@@ -31,6 +31,7 @@ const vendorLines = computed(() =>
 
 // Scoped quick-add modal for this project.
 const adding = ref<null | 'payment' | 'choose' | 'expense' | 'vendor'>(null)
+const editing = ref(false)
 async function onSaved() {
   adding.value = null
   await Promise.all([projects.fetchOne(id.value), projects.fetch(true), dashboard.fetch(true)])
@@ -73,8 +74,20 @@ const summary = computed(() => {
     <StateBlock :loading="projects.detailLoading && !detail" :error="projects.error" :rows="5" @retry="projects.fetchOne(id)">
       <template v-if="detail && m">
         <div class="flex items-start justify-between gap-2">
-          <div>
-            <h1 class="text-xl font-bold text-gray-900">{{ detail.project.project_name }}</h1>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h1 class="truncate text-xl font-bold text-gray-900">{{ detail.project.project_name }}</h1>
+              <button
+                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Edit project"
+                title="Edit project"
+                @click="editing = true"
+              >
+                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
             <p class="text-sm text-gray-400">{{ detail.project.client_name }} · started {{ date(detail.project.start_date) }}</p>
           </div>
           <select
@@ -170,6 +183,10 @@ const summary = computed(() => {
             <button class="btn-ghost flex-1 !bg-white shadow-lg ring-1 ring-gray-200" @click="adding = 'choose'">+ Expense</button>
           </div>
         </div>
+
+        <AppModal v-if="editing" title="Edit Project" @close="editing = false">
+          <ProjectEditForm :project="detail.project" @saved="editing = false; onSaved()" @cancel="editing = false" />
+        </AppModal>
 
         <AppModal v-if="adding === 'payment'" title="Record Payment" @close="adding = null">
           <PaymentForm :default-project-id="id" @saved="onSaved" @cancel="adding = null" />

@@ -42,5 +42,6 @@ const auth = useAuthStore()
     <BottomNav />
     <QuickAddSheet />
     <ToastHost />
+    <UpdatePrompt />
   </div>
 </template>

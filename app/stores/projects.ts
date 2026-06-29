@@ -45,10 +45,13 @@ export const useProjectsStore = defineStore('projects', {
       await this.fetch(true)
       return created
     },
-    async updateStatus(id: string, status: ProjectStatus) {
-      await useRepositories().projects.update(id, { status })
+    async update(id: string, patch: Partial<NewProject>) {
+      await useRepositories().projects.update(id, patch)
       await this.fetch(true)
       if (this.current?.project.id === id) await this.fetchOne(id)
+    },
+    async updateStatus(id: string, status: ProjectStatus) {
+      await this.update(id, { status })
     },
   },
 })
